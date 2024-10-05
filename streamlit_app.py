@@ -26,6 +26,9 @@ st.markdown("""
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
+if 'user_input' not in st.session_state:
+    st.session_state['user_input'] = ""
+
 # Upload multiple files
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
@@ -112,7 +115,7 @@ if uploaded_files:
 
     # Placeholder for user input at the bottom of the screen
     st.markdown("<div class='input-box'>", unsafe_allow_html=True)
-    user_question = st.text_input("Ask a question about the relevant document", key="input")
+    user_question = st.text_input("Ask a question about the relevant document", key="input", value=st.session_state['user_input'])
     st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)  # Closing chat container div
@@ -130,4 +133,4 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
-        st.session_state['user_question'] = ""
+        st.session_state['user_input'] = ""
