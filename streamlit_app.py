@@ -103,7 +103,7 @@ if uploaded_files:
     user_question = st.text_input("Ask a question about the relevant document", key="input")
     
     if user_question:
-        conversation_history = memory.get_history()
+        conversation_history = memory.buffer
         response = retrieval_chain.invoke({
             "input": user_question,
             "context": context,
