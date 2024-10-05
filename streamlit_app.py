@@ -56,7 +56,7 @@ if uploaded_files:
         all_documents.extend(documents)
 
     # Initialize embeddings and LLM
-    hf_embedding = HuggingFaceInstructEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
     persist_directory = 'db'
     # Vector database storage for all documents
