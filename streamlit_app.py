@@ -130,4 +130,4 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
-        st.session_state['user_input'] = ""
+        st.session_state['user_question'] = ""
