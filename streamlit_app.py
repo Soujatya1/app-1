@@ -103,9 +103,4 @@ if uploaded_files:
             "input": user_question
         })
 
-    # Display chat history with a conversational format
-    if st.session_state['chat_history']:
-        for chat in st.session_state['chat_history']:
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+
