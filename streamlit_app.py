@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import RetrievalQA
@@ -9,6 +9,7 @@ from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
+from langchain.embeddings import HuggingFaceInstructEmbeddings
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -55,12 +56,15 @@ if uploaded_files:
         all_documents.extend(documents)
 
     # Initialize embeddings and LLM
-    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    hf_embedding = HuggingFaceInstructEmbeddings(model_name="hkunlp/instructor-xl", 
+                                                      model_kwargs={"device": "cuda"})
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
-
+    persist_directory = 'db'
     # Vector database storage for all documents
-    vector_db = FAISS.from_documents(all_documents, hf_embedding)
+    vector_db = Chroma.from_documents(all_documents, hf_embedding, persist_directory)
 
+    vector_db.persist()
+    vector_db = None
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
@@ -89,6 +93,7 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
+        chain_type="stuff",
         retriever=retriever,
         return_source_documents=True
     )
