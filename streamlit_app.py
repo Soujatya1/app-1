@@ -92,11 +92,11 @@ if uploaded_files:
     retriever = vector_db.as_retriever()
     
     # Create a retrieval chain
-    retrieval_chain = create_retrieval_chain(retriever, document_chain, memory = memory)
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
     # Initialize memory for conversation
     memory = ConversationBufferMemory()
-    conversation_chain = ConversationChain(llm=llm, verbose=True, memory=memory)
+    #conversation_chain = ConversationChain(llm=llm, verbose=True, memory=memory)
     
     # Chat interface
     user_question = st.text_input("Ask a question about the relevant document", key="input")
