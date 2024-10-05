@@ -58,12 +58,10 @@ if uploaded_files:
     # Initialize embeddings and LLM
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
-    persist_directory = 'db'
+    
     # Vector database storage for all documents
-    vector_db = Chroma.from_documents(all_documents, hf_embedding, persist_directory)
-
-    vector_db.persist()
-    vector_db = None
+    vector_db = FAISS.from_documents(all_documents, hf_embedding, persist_directory)
+    
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
