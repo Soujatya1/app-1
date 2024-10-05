@@ -15,7 +15,7 @@ st.title("Knowledge Management Chatbot")
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-# Custom CSS to fix the input box at the bottom
+# Custom CSS to fix the input box at the bottom and style chat messages
 st.markdown("""
     <style>
     .input-box {
@@ -30,6 +30,18 @@ st.markdown("""
     .chat-box {
         max-height: 500px;
         overflow-y: auto;
+    }
+    .user-message {
+        background-color: #e0f7fa;
+        border-left: 5px solid #00796b;
+        padding: 10px;
+        margin: 5px 0;
+    }
+    .bot-message {
+        background-color: #ffe0b2;
+        border-left: 5px solid #f57c00;
+        padding: 10px;
+        margin: 5px 0;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -106,8 +118,8 @@ if uploaded_files:
 
     with chat_container:
         for chat in st.session_state['chat_history']:
-            st.write(f"**User:** {chat['user']}")
-            st.write(f"**Bot:** {chat['bot']}")
+            st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
 
     # Chat interface
     user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...")
@@ -129,6 +141,9 @@ if uploaded_files:
             
             # Display the updated chat
             chat_container.empty()  # Clear the chat display before updating
-for chat in st.session_state['chat_history']:
-    st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            for chat in st.session_state['chat_history']:
+                st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+                st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+
+    # Display the input box again after the latest message
+    user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...")
