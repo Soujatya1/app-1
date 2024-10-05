@@ -115,6 +115,7 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Display chat history with a conversational format
     if st.session_state['chat_history']:
