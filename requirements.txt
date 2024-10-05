@@ -7,3 +7,4 @@ pypdf
 sentence_transformers
 langchain
 chromadb
+os
