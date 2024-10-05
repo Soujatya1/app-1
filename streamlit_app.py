@@ -13,7 +13,7 @@ from langchain.chains import ConversationChain
 # App Title
 st.title("Knowledge Management Chatbot")
 
-memory = ConversationBufferMemory()
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
