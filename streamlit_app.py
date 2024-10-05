@@ -75,11 +75,13 @@ if uploaded_files:
     - Answer in a point-wise format when requested.
     - If the user asks for tabular format, try to present information in a table-like structure.
     - Always refer to the conversation history when applicable.
-    
+
+    Previous Conversations:
+    {chat_history}
     <context>
     {context}
     </context>
-    Conversation History: {chat_history}
+   
     Question: {input}
     """)
     
