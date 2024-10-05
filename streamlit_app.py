@@ -106,8 +106,11 @@ if uploaded_files:
         #conversation_history = memory.buffer
         memory_variables = memory.load_memory_variables({})
         chat_history = memory_variables.get("chat_history", "")
+        formatted_history = "\n".join([f"You: {msg.content}\nBot: {msg.response}" for msg in chat_history]) if chat_history else ""
+        context = " ".join([doc.page_content for doc in all_documents])
         response = retrieval_chain.invoke({
             "input": user_question,
+            context = context,
             "history": chat_history
         })
         memory.save_context({"input": user_question}, {"answer": response['answer']})
