@@ -63,10 +63,18 @@ if uploaded_files:
     prompt = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-    Think step by step before providing a detailed answer.
-    Wherever required, answer in a point-wise format.
-    Do not answer any unrelated questions which are not in the provided documents, please be careful on this.
-    I will tip you with a $1000 if the answer provided is helpful.
+
+    - Think step by step before providing a detailed answer.
+    - Answer in a point-wise format when requested.
+    - If the user asks for tabular format, try to present information in a table-like structure.
+    - Always refer to the conversation history when applicable.
+    Example interaction:
+    User: What is the summary of the first document?
+    Bot: Provides the summary.
+    User: Can you provide this in point-wise format?
+    Bot: Reformats the previous response into a point-wise list.
+    User: Can you present it in a table format?
+    Bot: Reformats the same information into a table-like structure.
     
     <context>
     {context}
