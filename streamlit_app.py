@@ -4,7 +4,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import RetrievalQAChain
+from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 
@@ -92,10 +92,9 @@ if uploaded_files:
     retriever = vector_db.as_retriever()
 
     # Create a retrieval chain
-    retrieval_chain = RetrievalQAChain.from_chain_type(
+    retrieval_qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         retriever=retriever,
-        chain_type="stuff",
         return_source_documents=True
     )
 
@@ -125,7 +124,7 @@ if uploaded_files:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
         # Get response from the retrieval chain with context
-        response = retrieval_chain.invoke({
+        response = retrieval_qa_chain.invoke({
             "input": user_question,
             "chat_history": conversation_history
         })
