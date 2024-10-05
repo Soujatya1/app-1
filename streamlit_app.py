@@ -1,7 +1,7 @@
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
@@ -57,7 +57,7 @@ if uploaded_files:
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
     # Vector database storage for all documents
-    vector_db = FAISS.from_documents(all_documents, hf_embedding)
+    vector_db = Chroma.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
