@@ -7,7 +7,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.cache import MemoryCache  # Import MemoryCache for caching
+from langchain.cache import InMemoryCache
 
 # App Title
 st.title("Knowledge Management Chatbot")
