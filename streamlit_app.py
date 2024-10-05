@@ -79,8 +79,7 @@ if uploaded_files:
     <context>
     {context}
     </context>
-    Conversation History: {conversation_history}
-    Question: {input}
+    
     """)
     
     # Stuff Document Chain Creation
