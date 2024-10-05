@@ -1,10 +1,10 @@
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
+from langchain.chains import RetrievalQAChain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 
@@ -56,9 +56,8 @@ if uploaded_files:
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
-    # Chroma Vector Store Creation
-    persist_directory = "chroma_storage_unq"
-    vector_db = Chroma.from_documents(documents=all_documents, embedding=hf_embedding, persist_directory=persist_directory)
+    # Vector database storage for all documents
+    vector_db = FAISS.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
@@ -89,11 +88,16 @@ if uploaded_files:
     # Stuff Document Chain Creation
     document_chain = create_stuff_documents_chain(llm, prompt)
 
-    # Retriever from Chroma Vector Store
+    # Retriever from vector store
     retriever = vector_db.as_retriever()
 
     # Create a retrieval chain
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    retrieval_chain = RetrievalQAChain.from_chain_type(
+        llm=llm,
+        retriever=retriever,
+        chain_type="stuff",
+        return_source_documents=True
+    )
 
     # Chat interface container with flex layout
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
