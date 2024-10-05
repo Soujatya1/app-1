@@ -125,7 +125,7 @@ if uploaded_files:
 
         # Get response from the retrieval chain with context
         response = retrieval_qa_chain({
-            "input": user_question,
+            "query": user_question,
             "chat_history": conversation_history
         })
 
