@@ -72,6 +72,13 @@ if uploaded_files:
     - Answer in a point-wise format when requested.
     - If the user asks for tabular format, try to present information in a table-like structure.
     - Always refer to the conversation history when applicable.
+    Example interaction:
+    User: What is the summary of the first document?
+    Bot: Provides the summary.
+    User: Can you provide this in point-wise format?
+    Bot: Reformats the previous response into a point-wise list.
+    User: Can you present it in a table format?
+    Bot: Reformats the same information into a table-like structure.
     
     <context>
     {context}
