@@ -57,7 +57,7 @@ if uploaded_files:
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
     # Chroma Vector Store Creation
-    persist_directory = "chroma_storage"  # Chroma will automatically create this directory
+    persist_directory = "chroma_storage_unq"
     vector_db = Chroma.from_documents(documents=all_documents, embedding=hf_embedding, persist_directory=persist_directory)
 
     # Craft ChatPrompt Template
