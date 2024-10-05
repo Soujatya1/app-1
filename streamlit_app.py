@@ -11,6 +11,10 @@ from langchain.embeddings import HuggingFaceEmbeddings
 # App Title
 st.title("Knowledge Management Chatbot")
 
+# Initialize session state to store chat history if not already initialized
+if 'chat_history' not in st.session_state:
+    st.session_state['chat_history'] = []
+
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
@@ -23,11 +27,15 @@ st.markdown("""
         border-top: 1px solid #ddd;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
+    .chat-box {
+        max-height: 500px;
+        overflow-y: auto;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # Upload file
-uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files = True)
+uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
     all_documents = []
@@ -52,7 +60,7 @@ if uploaded_files:
         # Append the documents from the current file to the list
         all_documents.extend(documents)
 
-# Initialize embeddings and LLM
+    # Initialize embeddings and LLM
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
@@ -92,16 +100,35 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
+    # Display the chat history
+    st.write("### Chat History")
+    chat_container = st.container()
+
+    with chat_container:
+        for chat in st.session_state['chat_history']:
+            st.write(f"**User:** {chat['user']}")
+            st.write(f"**Bot:** {chat['bot']}")
+
     # Chat interface
-    user_question = st.text_input("Ask a question about the relevant document", key="input")
+    user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...")
 
     if user_question:
- 
-
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
             "input": user_question
         })
+        
         if response:
-            st.write(response['answer'])
-
+            bot_answer = response['answer']
+            
+            # Update chat history
+            st.session_state['chat_history'].append({
+                'user': user_question,
+                'bot': bot_answer
+            })
+            
+            # Display the updated chat
+            chat_container.empty()  # Clear the chat display before updating
+            for chat in st.session_state['chat_history']:
+                st.write(f"**User:** {chat['user']}")
+                st.write(f"**Bot:** {chat['bot']}")
