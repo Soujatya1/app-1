@@ -13,6 +13,7 @@ from langchain.chains import ConversationChain
 # App Title
 st.title("Knowledge Management Chatbot")
 
+memory = ConversationBufferMemory()
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
@@ -87,7 +88,7 @@ if uploaded_files:
     # Stuff Document Chain Creation
     document_chain = create_stuff_documents_chain(llm, prompt)
 
-    memory = ConversationBufferMemory()
+    
     # Retriever from vector store
     retriever = vector_db.as_retriever()
     
