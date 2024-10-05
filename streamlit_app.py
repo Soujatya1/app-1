@@ -106,7 +106,7 @@ if uploaded_files:
         chat_history = memory_variables.get("chat_history", "")
         response = retrieval_chain.invoke({
             "input": user_question,
-            "history": conversation_history
+            "history": chat_history
         })
         memory.save_context({"input": user_question}, {"answer": response['answer']})
         # Add the user's question and the model's response to chat history
