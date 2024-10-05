@@ -102,10 +102,10 @@ if uploaded_files:
     
     if user_question:
         # Add the user's question to the memory
-        memory.add_to_memory(user_question)
+        memory.buffer.append(f"You: {user_question}")
     
         # Get the context from memory
-        context = memory.get_context()
+        context = memory.buffer
         
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
@@ -116,6 +116,7 @@ if uploaded_files:
     
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+        memory.buffer.append(f"Bot: {response['answer']}")
     
     # Display chat history with a conversational format
     if st.session_state['chat_history']:
