@@ -116,7 +116,7 @@ if uploaded_files:
     
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-        memory.buffer.append(f"Bot: {response['answer']}")
+        memory.add_ai_message(response['answer'])
     
     # Display chat history with a conversational format
     if st.session_state['chat_history']:
