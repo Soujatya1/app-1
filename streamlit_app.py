@@ -102,7 +102,7 @@ if uploaded_files:
     
     if user_question:
         # Add the user's question to the memory
-        memory.add_user_message(user_question)
+        memory.buffer += f"You: {user_question}\n"
     
         # Get the context from memory
         context = memory.buffer
@@ -116,7 +116,7 @@ if uploaded_files:
     
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-        memory.add_ai_message(response['answer'])
+        memory.buffer += f"Bot: {response['answer']}\n"
     
     # Display chat history with a conversational format
     if st.session_state['chat_history']:
