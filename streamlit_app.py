@@ -15,32 +15,42 @@ st.title("Knowledge Management Chatbot")
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-# Upload file
-uploaded_file = st.file_uploader("Upload a file", type=["pdf"])
+# Upload multiple files
+uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
-if uploaded_file is not None:
-    with open("HRPolicy_Test.pdf", "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.success("File uploaded successfully!")
+if uploaded_files:
+    all_documents = []
 
-    # Load PDF
-    loader = PyPDFLoader("HRPolicy_Test.pdf")
-    docs = loader.load()
+    # Iterate over each uploaded file
+    for uploaded_file in uploaded_files:
+        # Save each file temporarily
+        with open(uploaded_file.name, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        
+        # Success message
+        st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
-    # Text Splitting into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=15)
-    documents = text_splitter.split_documents(docs)
+        # Load the PDF
+        loader = PyPDFLoader(uploaded_file.name)
+        docs = loader.load()
+
+        # Text Splitting into chunks
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=15)
+        documents = text_splitter.split_documents(docs)
+
+        # Append the documents from the current file to the list
+        all_documents.extend(documents)
 
     # Initialize embeddings and LLM
-    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
+    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
-    # Vector database storage
-    vector_db = FAISS.from_documents(documents, hf_embedding)
+    # Vector database storage for all documents
+    vector_db = FAISS.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
-    You are a Bandhan Life Insurance specialist. Answer the queries from an insurance specialist perspective who wants to resolve customer queries as asked.
+    You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
     Think step by step before providing a detailed answer.
     Wherever required, answer in a point-wise format.
