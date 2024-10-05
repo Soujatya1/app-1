@@ -31,8 +31,6 @@ if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
 # Upload file
-uploaded_file = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files = True)
-
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
