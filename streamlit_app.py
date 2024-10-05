@@ -102,7 +102,7 @@ if uploaded_files:
     
     if user_question:
         #conversation_history = memory.buffer
-        conversation_history = memory.load_memory_variables({})
+        memory_variables = memory.load_memory_variables({})
         chat_history = memory_variables.get("chat_history", "")
         response = retrieval_chain.invoke({
             "input": user_question,
