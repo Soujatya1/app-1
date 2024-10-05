@@ -18,6 +18,10 @@ st.markdown("""
         position: fixed;
         bottom: 0;
         width: 100%;
+        padding: 10px;
+        background-color: #ffffff;
+        border-top: 1px solid #ddd;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
     </style>
     """, unsafe_allow_html=True)
@@ -90,28 +94,22 @@ if uploaded_files:
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
 
     # Display chat history in a scrollable area
-    st.markdown("<div class='chat-history'>", unsafe_allow_html=True)
     if st.session_state['chat_history']:
         for chat in st.session_state['chat_history']:
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    # Placeholder for user input at the bottom of the screen
-    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
+    # Get user question input at the bottom of the screen
     user_question = st.text_input("Ask a question about the relevant document", key="input")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)  # Closing chat container div
 
     if user_question:
-        # Build conversation history
+        # Build conversation history for the last 10 interactions dynamically
         conversation_history = ""
         for chat in st.session_state['chat_history'][-10:]:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
-        # Get response from the retrieval chain with context
+        # Get response from the retrieval chain, including the dynamic chat history
         response = retrieval_chain.invoke({
             "input": user_question,
             "chat_history": conversation_history
@@ -119,3 +117,6 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+
+    # Close the chat container div
+    st.markdown("</div>", unsafe_allow_html=True)
