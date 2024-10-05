@@ -14,20 +14,6 @@ st.title("Knowledge Management Chatbot")
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
-    .chat-container {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        height: 80vh;
-        border: 1px solid #ddd;
-        padding: 20px;
-        border-radius: 10px;
-    }
-    .chat-history {
-        flex-grow: 1;
-        overflow-y: auto;
-        margin-bottom: 20px;
-    }
     .input-box {
         position: fixed;
         bottom: 0;
