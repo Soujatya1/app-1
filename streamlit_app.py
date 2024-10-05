@@ -69,7 +69,7 @@ if uploaded_files:
 
     template = "You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.Answer the following questions based only on the provided context, previous responses, and the uploaded documents. Think step by step before providing a detailed answer. Answer in a point-wise format when requested. If the user asks for tabular format, try to present information in a table-like structure. Always refer to the conversation history when applicable."
 
-    prompt = PromptTemplate(input_variables=["input", "chat_history"], template=template)
+    prompt = PromptTemplate(input_variables=["input", "context", "chat_history"], template=template)
     
     # Stuff Document Chain Creation
     document_chain = create_stuff_documents_chain(llm, prompt)
