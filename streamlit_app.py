@@ -59,67 +59,67 @@ if uploaded_files:
         all_documents.extend(documents)
 
 # Initialize embeddings and LLM
-hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
-
-# Vector database storage for all documents
-vector_db = FAISS.from_documents(all_documents, hf_embedding)
-
-# Craft ChatPrompt Template
-prompt = ChatPromptTemplate.from_template("""
-You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
-Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-
-- Think step by step before providing a detailed answer.
-- Answer in a point-wise format when requested.
-- If the user asks for tabular format, try to present information in a table-like structure.
-- Always refer to the conversation history when applicable.
-
-<context>
-{context}
-</context>
-Conversation History:
-{chat_history}
-
-Question: {input}
-""")
-
-# Stuff Document Chain Creation
-document_chain = create_stuff_documents_chain(llm, prompt)
-
-# Retriever from vector store
-retriever = vector_db.as_retriever()
-
-# Create a retrieval chain
-retrieval_chain = create_retrieval_chain(retriever, document_chain)
-
-# Initialize memory for conversation
-memory = ConversationBufferMemory()
-conversation_chain = ConversationChain(llm=llm, verbose=True, memory=memory)
-
-# Chat interface
-user_question = st.text_input("Ask a question about the relevant document", key="input")
-
-if user_question:
-    # Add the user's question to the memory
-    memory.add_to_memory(user_question)
-
-    # Get the context from memory
-    context = memory.get_context()
+    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
     
-    # Get response from the retrieval chain with context
-    response = retrieval_chain.invoke({
-        "input": user_question,
-        "context": context,
-        "chat_history": "\n".join([f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'][-10:]])
-    })
-
-    # Add the user's question and the model's response to chat history
-    st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-
-# Display chat history with a conversational format
-if st.session_state['chat_history']:
-    for chat in st.session_state['chat_history']:
-        st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
+    # Vector database storage for all documents
+    vector_db = FAISS.from_documents(all_documents, hf_embedding)
+    
+    # Craft ChatPrompt Template
+    prompt = ChatPromptTemplate.from_template("""
+    You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
+    Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
+    
+    - Think step by step before providing a detailed answer.
+    - Answer in a point-wise format when requested.
+    - If the user asks for tabular format, try to present information in a table-like structure.
+    - Always refer to the conversation history when applicable.
+    
+    <context>
+    {context}
+    </context>
+    Conversation History:
+    {chat_history}
+    
+    Question: {input}
+    """)
+    
+    # Stuff Document Chain Creation
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    
+    # Retriever from vector store
+    retriever = vector_db.as_retriever()
+    
+    # Create a retrieval chain
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    
+    # Initialize memory for conversation
+    memory = ConversationBufferMemory()
+    conversation_chain = ConversationChain(llm=llm, verbose=True, memory=memory)
+    
+    # Chat interface
+    user_question = st.text_input("Ask a question about the relevant document", key="input")
+    
+    if user_question:
+        # Add the user's question to the memory
+        memory.add_to_memory(user_question)
+    
+        # Get the context from memory
+        context = memory.get_context()
+        
+        # Get response from the retrieval chain with context
+        response = retrieval_chain.invoke({
+            "input": user_question,
+            "context": context,
+            "chat_history": "\n".join([f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'][-10:]])
+        })
+    
+        # Add the user's question and the model's response to chat history
+        st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+    
+    # Display chat history with a conversational format
+    if st.session_state['chat_history']:
+        for chat in st.session_state['chat_history']:
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
