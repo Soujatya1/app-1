@@ -122,6 +122,3 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
-
-        # Clear the input field after submission
-        st.session_state['input'] = ""
