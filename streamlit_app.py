@@ -11,6 +11,29 @@ from langchain.embeddings import HuggingFaceEmbeddings
 # App Title
 st.title("Knowledge Management Chatbot")
 
+st.markdown("""
+    <style>
+    .chat-container {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        height: 80vh;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+    }
+    .chat-history {
+        flex-grow: 1;
+        overflow-y: auto;
+        margin-bottom: 20px;
+    }
+    .input-box {
+        position: sticky;
+        bottom: 0;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
 # Initialize session state to store chat history
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
@@ -75,9 +98,23 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Chat interface
-    user_input_placeholder = st.empty()
-    user_question = user_input_placeholder.text_input("Ask a question about the relevant document", key="input")
+    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
+
+    # Display chat history in a scrollable area
+    if st.session_state['chat_history']:
+        st.markdown("<div class='chat-history'>", unsafe_allow_html=True)
+        for chat in st.session_state['chat_history']:
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    # Placeholder for user input at the bottom of the screen
+    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
+    user_question = st.text_input("Ask a question about the relevant document", key="input")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if user_question:
         # Build conversation history
