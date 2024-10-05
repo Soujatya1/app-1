@@ -124,7 +124,7 @@ if uploaded_files:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
         # Get response from the retrieval chain with context
-        response = retrieval_qa_chain.invoke({
+        response = retrieval_qa_chain({
             "input": user_question,
             "chat_history": conversation_history
         })
