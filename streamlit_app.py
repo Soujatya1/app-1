@@ -102,7 +102,7 @@ if uploaded_files:
     
     if user_question:
         # Add the user's question to the memory
-        memory.buffer.append(f"You: {user_question}")
+       memory.add_user_message(user_question)
     
         # Get the context from memory
         context = memory.buffer
