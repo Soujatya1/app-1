@@ -7,7 +7,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.cache import InMemoryCache
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -31,7 +30,7 @@ st.markdown("""
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 if 'cache' not in st.session_state:
-    st.session_state['cache'] = InMemoryCache()  # Initialize cache
+    st.session_state['cache'] = {}  # Initialize cache as a dictionary
 
 # Upload multiple files
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
@@ -123,7 +122,7 @@ if uploaded_files:
         # Check if the response is already cached
         cached_response = st.session_state['cache'].get(user_question)
         if cached_response:
-            response = cached_response
+            response = {'answer': cached_response}
         else:
             # Get response from the retrieval chain, including the dynamic chat history
             response = retrieval_chain.invoke({
@@ -132,7 +131,7 @@ if uploaded_files:
             })
 
             # Store the response in the cache
-            st.session_state['cache'].set(user_question, response['answer'])
+            st.session_state['cache'][user_question] = response['answer']
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
