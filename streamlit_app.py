@@ -7,7 +7,6 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
-import os
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -57,19 +56,9 @@ if uploaded_files:
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
-    # Create or load Chroma vector database (Ensure persistence)
-    chroma_db_path = "chroma_db_storage"  # Directory for persistent Chroma storage
-    if not os.path.exists(chroma_db_path):
-        os.makedirs(chroma_db_path)
-        
-    # Initialize Chroma
-    vector_db = Chroma(persist_directory=chroma_db_path, embedding_function=hf_embedding)
-
-    # Add documents to Chroma
-    vector_db.add_documents(all_documents)
-
-    # Persist Chroma database
-    vector_db.persist()
+    # Chroma Vector Store Creation
+    persist_directory = "chroma_storage"  # Chroma will automatically create this directory
+    vector_db = Chroma.from_documents(documents=all_documents, embedding=hf_embedding, persist_directory=persist_directory)
 
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
@@ -100,7 +89,7 @@ if uploaded_files:
     # Stuff Document Chain Creation
     document_chain = create_stuff_documents_chain(llm, prompt)
 
-    # Retriever from vector store
+    # Retriever from Chroma Vector Store
     retriever = vector_db.as_retriever()
 
     # Create a retrieval chain
