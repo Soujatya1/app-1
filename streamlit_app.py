@@ -7,6 +7,8 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import RetrievalQA
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.chains.conversation.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -91,6 +93,10 @@ if uploaded_files:
         return_source_documents=True
     )
 
+    # Initialize conversation memory
+    conversation_memory = ConversationBufferMemory()
+    conversation_chain = ConversationChain(memory=conversation_memory)
+
     # Chat interface container with flex layout
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
 
@@ -111,14 +117,17 @@ if uploaded_files:
     st.markdown("</div>", unsafe_allow_html=True)
 
     if user_question:
-        # Build conversation history
-        conversation_history = "\n".join(f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'])
+        # Use ConversationChain to generate response
+        response = conversation_chain({
+            "input": user_question,
+            "chat_history": st.session_state['chat_history']  # Use the chat history from session state
+        })
 
         # Get response from the retrieval chain with context
-        response = retrieval_qa_chain({
+        retrieved_response = retrieval_qa_chain({
             "query": user_question,
-            "chat_history": conversation_history  # Ensure you're using the constructed history
+            "chat_history": response['output']  # Ensure you're using the constructed history
         })
 
         # Add the user's question and the model's response to chat history
-        st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
+        st.session_state.chat_history.append({"user": user_question, "bot": retrieved_response['result']})
