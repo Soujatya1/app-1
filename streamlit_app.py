@@ -102,5 +102,6 @@ if uploaded_files:
         response = retrieval_chain.invoke({
             "input": user_question
         })
-
+        if response:
+            st.write(response['generation'])
 
