@@ -110,7 +110,7 @@ if uploaded_files:
         context = " ".join([doc.page_content for doc in all_documents])
         response = retrieval_chain.invoke({
             "input": user_question,
-            context = context,
+            "context": context,
             "history": chat_history
         })
         memory.save_context({"input": user_question}, {"answer": response['answer']})
