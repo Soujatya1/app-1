@@ -14,29 +14,19 @@ st.title("Knowledge Management Chatbot")
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
-    .chat-container {
-        height: 70vh;  /* Set height of the chat container */
-        overflow-y: auto;  /* Allow scrolling if chat history is long */
-        padding: 10px;
-        margin-bottom: 60px;  /* Space for the input box */
-    }
     .input-box {
         position: fixed;
         bottom: 0;
         width: 100%;
-        padding: 10px;
-        background-color: #ffffff;
-        border-top: 1px solid #ddd;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
     </style>
     """, unsafe_allow_html=True)
 
-# Initialize session state to store chat history and caching
+# Initialize session state to store chat history
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-# Upload file
+# Upload multiple files
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -70,22 +60,14 @@ if uploaded_files:
     vector_db = FAISS.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
-    prompt = ChatPromptTemplate.from_template("""\
+    prompt = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-
-    - Think step by step before providing a detailed answer.
-    - Answer in a point-wise format when requested.
-    - If the user asks for tabular format, try to present information in a table-like structure.
-    - Always refer to the conversation history when applicable.
-    Example interaction:
-    User: What is the summary of the first document?
-    Bot: Provides the summary.
-    User: Can you provide this in point-wise format?
-    Bot: Reformats the previous response into a point-wise list.
-    User: Can you present it in a table format?
-    Bot: Reformats the same information into a table-like structure.
-
+    Think step by step before providing a detailed answer.
+    Wherever required, answer in a point-wise format.
+    Do not answer any unrelated questions which are not in the provided documents, please be careful on this.
+    I will tip you with a $1000 if the answer provided is helpful.
+    
     <context>
     {context}
     </context>
@@ -104,13 +86,29 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Chat interface
+    # Chat interface container with flex layout
+    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
+
+    # Display chat history in a scrollable area
+    st.markdown("<div class='chat-history'>", unsafe_allow_html=True)
+    if st.session_state['chat_history']:
+        for chat in st.session_state['chat_history']:
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Placeholder for user input at the bottom of the screen
+    st.markdown("<div class='input-box'>", unsafe_allow_html=True)
     user_question = st.text_input("Ask a question about the relevant document", key="input")
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)  # Closing chat container div
 
     if user_question:
         # Build conversation history
         conversation_history = ""
-        for chat in st.session_state['chat_history'][-10:]:
+        for chat in st.session_state['chat_history']:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
         # Get response from the retrieval chain with context
@@ -121,10 +119,3 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-
-    if st.session_state['chat_history']:
-        for chat in st.session_state['chat_history']:
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)  # End chat container
