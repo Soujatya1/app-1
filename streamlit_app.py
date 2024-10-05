@@ -125,9 +125,9 @@ if uploaded_files:
 
         # Get response from the retrieval chain with context
         response = retrieval_qa_chain({
-            "query": user_question,
-            "chat_history": conversation_history
+            "query": user_question
         })
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
+        st.session_state.input = ""
