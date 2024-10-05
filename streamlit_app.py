@@ -29,10 +29,10 @@ st.markdown("""
 # Initialize session state to store chat history and caching
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
-if 'cache' not in st.session_state:
-    st.session_state['cache'] = {}  # Initialize cache as a dictionary
 
-# Upload multiple files
+# Upload file
+uploaded_file = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files = True)
+
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -58,7 +58,7 @@ if uploaded_files:
         # Append the documents from the current file to the list
         all_documents.extend(documents)
 
-    # Initialize embeddings and LLM
+# Initialize embeddings and LLM
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
@@ -100,41 +100,27 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Chat interface container with flex layout
-    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
+    # Chat interface
+    user_question = st.text_input("Ask a question about the relevant document", key="input")
 
-    # Display chat history in a scrollable area
+    if user_question:
+        # Build conversation history
+        conversation_history = ""
+        for chat in st.session_state['chat_history'][-10:]:
+            conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
+
+        # Get response from the retrieval chain with context
+        response = retrieval_chain.invoke({
+            "input": user_question,
+            "chat_history": conversation_history
+        })
+
+        # Add the user's question and the model's response to chat history
+        st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+
+    # Display chat history with a conversational format
     if st.session_state['chat_history']:
         for chat in st.session_state['chat_history']:
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
-
-    # Get user question input at the bottom of the screen
-    user_question = st.text_input("Ask a question about the relevant document", key="input")
-
-    if user_question:
-        # Build conversation history for the last 10 interactions dynamically
-        conversation_history = ""
-        for chat in st.session_state['chat_history'][-10:]:
-            conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
-
-        # Check if the response is already cached
-        cached_response = st.session_state['cache'].get(user_question)
-        if cached_response:
-            response = {'answer': cached_response}
-        else:
-            # Get response from the retrieval chain, including the dynamic chat history
-            response = retrieval_chain.invoke({
-                "input": user_question,
-                "chat_history": conversation_history
-            })
-
-            # Store the response in the cache
-            st.session_state['cache'][user_question] = response['answer']
-
-        # Add the user's question and the model's response to chat history
-        st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-
-    # Close the chat container div
-    st.markdown("</div>", unsafe_allow_html=True)
