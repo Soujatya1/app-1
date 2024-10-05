@@ -14,6 +14,12 @@ st.title("Knowledge Management Chatbot")
 # Custom CSS to fix the input box at the bottom
 st.markdown("""
     <style>
+    .chat-container {
+        height: 70vh;  /* Set height of the chat container */
+        overflow-y: auto;  /* Allow scrolling if chat history is long */
+        padding: 10px;
+        margin-bottom: 60px;  /* Space for the input box */
+    }
     .input-box {
         position: fixed;
         bottom: 0;
@@ -56,7 +62,7 @@ if uploaded_files:
         # Append the documents from the current file to the list
         all_documents.extend(documents)
 
-# Initialize embeddings and LLM
+    # Initialize embeddings and LLM
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
@@ -64,7 +70,7 @@ if uploaded_files:
     vector_db = FAISS.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
-    prompt = ChatPromptTemplate.from_template("""
+    prompt = ChatPromptTemplate.from_template("""\
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
 
@@ -115,11 +121,12 @@ if uploaded_files:
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # Display chat history with a conversational format
+    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)  # Start chat container
     if st.session_state['chat_history']:
         for chat in st.session_state['chat_history']:
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)  # End chat container
