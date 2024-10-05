@@ -95,7 +95,7 @@ if uploaded_files:
 
     # Initialize conversation memory
     conversation_memory = ConversationBufferMemory()
-    conversation_chain = ConversationChain(memory=conversation_memory)
+    conversation_chain = ConversationChain(llm = llm, verbose = True, memory=conversation_memory)
 
     # Chat interface container with flex layout
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
