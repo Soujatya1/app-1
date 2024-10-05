@@ -31,7 +31,7 @@ st.markdown("""
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 if 'cache' not in st.session_state:
-    st.session_state['cache'] = MemoryCache()  # Initialize cache
+    st.session_state['cache'] = InMemoryCache()  # Initialize cache
 
 # Upload multiple files
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
