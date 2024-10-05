@@ -103,5 +103,5 @@ if uploaded_files:
             "input": user_question
         })
         if response:
-            st.write(response['result'])
+            st.write(response['answer'])
 
