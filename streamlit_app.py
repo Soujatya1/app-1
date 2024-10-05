@@ -101,15 +101,16 @@ if uploaded_files:
     user_question = st.text_input("Ask a question about the relevant document", key="input")
     
     if user_question:
-        conversation_history = memory.buffer
+        #conversation_history = memory.buffer
+        conversation_history = memory.load_memory_variables({})["conversation_history"]
         response = retrieval_chain.invoke({
             "input": user_question,
             "history": conversation_history
         })
-    
+        memory.save_context({"input": user_question}, {"answer": response['answer']})
         # Add the user's question and the model's response to chat history
         #st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-        memory.add({"user": user_question, "bot": response['answer']})
+        #memory.add({"user": user_question, "bot": response['answer']})
     
     # Display chat history with a conversational format
     #if st.session_state['chat_history']:
