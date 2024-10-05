@@ -29,7 +29,7 @@ st.markdown("""
         margin-bottom: 20px;
     }
     .input-box {
-        position: sticky;
+        position: fixed;
         bottom: 0;
         width: 100%;
     }
