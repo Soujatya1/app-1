@@ -7,6 +7,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.cache import MemoryCache  # Import MemoryCache for caching
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -26,9 +27,11 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Initialize session state to store chat history
+# Initialize session state to store chat history and caching
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
+if 'cache' not in st.session_state:
+    st.session_state['cache'] = MemoryCache()  # Initialize cache
 
 # Upload multiple files
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
@@ -67,7 +70,7 @@ if uploaded_files:
     prompt = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-    
+
     - Think step by step before providing a detailed answer.
     - Answer in a point-wise format when requested.
     - If the user asks for tabular format, try to present information in a table-like structure.
@@ -79,7 +82,7 @@ if uploaded_files:
     Bot: Reformats the previous response into a point-wise list.
     User: Can you present it in a table format?
     Bot: Reformats the same information into a table-like structure.
-    
+
     <context>
     {context}
     </context>
@@ -117,11 +120,19 @@ if uploaded_files:
         for chat in st.session_state['chat_history'][-10:]:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
-        # Get response from the retrieval chain, including the dynamic chat history
-        response = retrieval_chain.invoke({
-            "input": user_question,
-            "chat_history": conversation_history
-        })
+        # Check if the response is already cached
+        cached_response = st.session_state['cache'].get(user_question)
+        if cached_response:
+            response = cached_response
+        else:
+            # Get response from the retrieval chain, including the dynamic chat history
+            response = retrieval_chain.invoke({
+                "input": user_question,
+                "chat_history": conversation_history
+            })
+
+            # Store the response in the cache
+            st.session_state['cache'].set(user_question, response['answer'])
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
