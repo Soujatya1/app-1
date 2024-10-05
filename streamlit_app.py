@@ -20,7 +20,7 @@ st.markdown("""
     <style>
     .input-box {
         position: fixed;
-        bottom: 100;
+        bottom: 0;
         width: 100%;
         padding: 10px;
         background-color: #ffffff;
