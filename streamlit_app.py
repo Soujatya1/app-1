@@ -29,8 +29,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Initialize session state to store chat history and caching
-if 'chat_history' not in st.session_state:
-    st.session_state['chat_history'] = []
+#if 'chat_history' not in st.session_state:
+#    st.session_state['chat_history'] = []
 
 # Upload file
 uploaded_files = st.file_uploader("Upload PDF files", type=["pdf"], accept_multiple_files=True)
@@ -86,12 +86,13 @@ if uploaded_files:
     
     # Stuff Document Chain Creation
     document_chain = create_stuff_documents_chain(llm, prompt)
-    
+
+    memory = ConversationBufferMemory()
     # Retriever from vector store
     retriever = vector_db.as_retriever()
     
     # Create a retrieval chain
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    retrieval_chain = create_retrieval_chain(retriever, document_chain, memory = memory)
     
     # Initialize memory for conversation
     memory = ConversationBufferMemory()
@@ -101,26 +102,25 @@ if uploaded_files:
     user_question = st.text_input("Ask a question about the relevant document", key="input")
     
     if user_question:
-        # Add the user's question to the memory
-        memory.buffer += f"You: {user_question}\n"
-    
-        # Get the context from memory
-        context = memory.buffer
-        
-        # Get response from the retrieval chain with context
+        conversation_history = "\n".join([f"You: {chat['user']}\nBot: {chat['bot']}" for chat in memory.messages])
         response = retrieval_chain.invoke({
             "input": user_question,
             "context": context,
-            "chat_history": "\n".join([f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'][-10:]])
+            "history": conversation_history
         })
     
         # Add the user's question and the model's response to chat history
-        st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
-        memory.buffer += f"Bot: {response['answer']}\n"
+        #st.session_state.chat_history.append({"user": user_question, "bot": response['answer']})
+        memory.add({"user": user_question, "bot": response['answer']})
     
     # Display chat history with a conversational format
-    if st.session_state['chat_history']:
-        for chat in st.session_state['chat_history']:
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-            st.markdown("<br>", unsafe_allow_html=True)
+    #if st.session_state['chat_history']:
+        #for chat in st.session_state['chat_history']:
+            #st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+            #st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            #st.markdown("<br>", unsafe_allow_html=True)
+if memory.messages:
+    for chat in memory.messages:
+        st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #DCF8C6;'><strong>You:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='padding: 10px; border-radius: 10px; background-color: #ECECEC; margin-top: 5px;'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
