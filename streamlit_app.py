@@ -76,7 +76,8 @@ if uploaded_files:
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
     # Chat interface
-    user_question = st.text_input("Ask a question about the relevant document", key="input")
+    user_input_placeholder = st.empty()
+    user_question = user_input_placeholder.text_input("Ask a question about the relevant document", key="input")
 
     if user_question:
         # Build conversation history
