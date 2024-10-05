@@ -125,8 +125,7 @@ if uploaded_files:
 
         # Get response from the retrieval chain with context
         retrieved_response = retrieval_qa_chain({
-            "query": user_question,
-            "chat_history": response['output']  # Ensure you're using the constructed history
+            "query": user_question
         })
 
         # Add the user's question and the model's response to chat history
