@@ -77,12 +77,12 @@ if uploaded_files:
     - Always refer to the conversation history when applicable.
 
     Previous Conversations:
-    {{chat_history}}
+    {chat_history}
     <context>
     {context}
     </context>
    
-    Question: {{input}}
+    Question: {input}
     """)
     
     # Stuff Document Chain Creation
