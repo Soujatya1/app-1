@@ -68,13 +68,6 @@ if uploaded_files:
     - Answer in a point-wise format when requested.
     - If the user asks for tabular format, try to present information in a table-like structure.
     - Always refer to the conversation history when applicable.
-    Example interaction:
-    User: What is the summary of the first document?
-    Bot: Provides the summary.
-    User: Can you provide this in point-wise format?
-    Bot: Reformats the previous response into a point-wise list.
-    User: Can you present it in a table format?
-    Bot: Reformats the same information into a table-like structure.
     
     <context>
     {context}
@@ -119,15 +112,16 @@ if uploaded_files:
 
     if user_question:
         # Build conversation history
-        conversation_history = ""
-        for chat in st.session_state['chat_history']:
-            conversation_history = "\n".join(f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'])
+        conversation_history = "\n".join(f"You: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history'])
 
         # Get response from the retrieval chain with context
         response = retrieval_qa_chain({
             "query": user_question,
-            "chat_history": conversation_history
+            "chat_history": conversation_history  # Ensure you're using the constructed history
         })
 
         # Add the user's question and the model's response to chat history
         st.session_state.chat_history.append({"user": user_question, "bot": response['result']})
+
+        # Clear the input field after submission
+        st.session_state['input'] = ""
