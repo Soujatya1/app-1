@@ -1,12 +1,13 @@
 import streamlit as st
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import Chroma
+from langchain.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
+import os
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -56,8 +57,19 @@ if uploaded_files:
     hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
 
-    # Vector database storage for all documents
-    vector_db = Chroma.from_documents(all_documents, hf_embedding)
+    # Create or load Chroma vector database (Ensure persistence)
+    chroma_db_path = "chroma_db_storage"  # Directory for persistent Chroma storage
+    if not os.path.exists(chroma_db_path):
+        os.makedirs(chroma_db_path)
+        
+    # Initialize Chroma
+    vector_db = Chroma(persist_directory=chroma_db_path, embedding_function=hf_embedding)
+
+    # Add documents to Chroma
+    vector_db.add_documents(all_documents)
+
+    # Persist Chroma database
+    vector_db.persist()
 
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
