@@ -129,6 +129,6 @@ if uploaded_files:
             
             # Display the updated chat
             chat_container.empty()  # Clear the chat display before updating
-             for chat in st.session_state['chat_history']:
-                st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+for chat in st.session_state['chat_history']:
+    st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+    st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
