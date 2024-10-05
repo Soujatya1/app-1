@@ -106,7 +106,6 @@ if uploaded_files:
         conversation_history = memory.buffer
         response = retrieval_chain.invoke({
             "input": user_question,
-            "context": context,
             "history": conversation_history
         })
     
