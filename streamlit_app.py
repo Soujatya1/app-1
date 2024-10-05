@@ -119,13 +119,13 @@ if uploaded_files:
     if user_question:
         # Use ConversationChain to generate response
         response = conversation_chain({
-            "input": user_question,
-            "chat_history": st.session_state['chat_history']  # Use the chat history from session state
+            "input": user_question
         })
 
         # Get response from the retrieval chain with context
         retrieved_response = retrieval_qa_chain({
-            "query": user_question
+            "query": user_question,
+            "chat_history": st.session_state['chat_history']
         })
 
         # Add the user's question and the model's response to chat history
