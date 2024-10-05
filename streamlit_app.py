@@ -60,7 +60,7 @@ if uploaded_files:
     llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
     
     # Vector database storage for all documents
-    vector_db = FAISS.from_documents(all_documents, hf_embedding, persist_directory)
+    vector_db = FAISS.from_documents(all_documents, hf_embedding)
     
     # Craft ChatPrompt Template
     prompt = ChatPromptTemplate.from_template("""
