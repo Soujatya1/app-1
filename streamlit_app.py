@@ -108,7 +108,7 @@ if uploaded_files:
     if user_question:
         # Build conversation history
         conversation_history = ""
-        for chat in st.session_state['chat_history']:
+        for chat in st.session_state['chat_history'][-10]:
             conversation_history += f"You: {chat['user']}\nBot: {chat['bot']}\n"
 
         # Get response from the retrieval chain with context
