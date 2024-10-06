@@ -30,21 +30,19 @@ if uploaded_files:
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-# Modify Chat Prompt Template to include previous context
-def create_chat_prompt(history, context):
-    history_text = "\n".join([f"You: {item['question']}\nBot: {item['answer']}" for item in history])
-    return ChatPromptTemplate.from_template(
-        f"""
-Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question and the conversation so far.
+# Chat Prompt Template with dynamic context and history
+prompt = ChatPromptTemplate.from_template(
+"""
+Answer the questions based on the provided context and the previous conversation.
+Please provide the most accurate response based on the following:
 <context>
 {context}
 </context>
-Previous conversation:
-{history_text}
-Questions: {{input}}
+Previous questions and answers:
+{history}
+Questions:{input}
 """
-    )
+)
 
 def vector_embedding():
     if "vectors" not in st.session_state:
@@ -58,7 +56,7 @@ def vector_embedding():
 
 # Display the conversation history at the top
 st.header("Conversation History")
-for interaction in st.session_state.history:
+for interaction in st.session_state.history[-10:]:
     st.write(f"**You:** {interaction['question']}")
     st.write(f"**Bot:** {interaction['answer']}")
     st.write("---")
@@ -76,14 +74,23 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
+    # Create the history string from the last 10 interactions
+    history_str = "\n".join([f"Q: {interaction['question']}\nA: {interaction['answer']}" for interaction in st.session_state.history[-10:]])
+    
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, create_chat_prompt(st.session_state.history, "{context}"))
+    document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1})
+    
+    # Include the history and current question in the input for the chain
+    response = retrieval_chain.invoke({
+        'input': prompt1,
+        'history': history_str
+    })
+    
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
@@ -91,6 +98,10 @@ if prompt1 and "vectors" in st.session_state:
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
+    
+    # Limit the history to the last 10 interactions
+    if len(st.session_state.history) > 10:
+        st.session_state.history = st.session_state.history[-10:]
     
     # Display the current answer
     st.write(answer)
