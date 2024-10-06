@@ -50,7 +50,7 @@ if uploaded_files:
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
 # Initialize LLM model
-llm = ChatGroq(groq_api_key="your_api_key", model_name="Llama3-8b-8192")
+llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template with dynamic context
 def create_prompt(input_text):
