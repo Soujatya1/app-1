@@ -21,7 +21,7 @@ st.markdown("""
         width: 100%;
         background-color: white;
         padding: 10px;
-        z-index: 100;
+        z-index: 999;
     }
     .conversation-history {
         max-height: 75vh;
@@ -203,7 +203,6 @@ for interaction in st.session_state.history:
 
 # Divider to separate the conversation history from the input box
 st.write("---")
-st.write("Ask your question below:")
 
 with st.sidebar:
     st.header("Language Selection")
@@ -211,7 +210,7 @@ with st.sidebar:
 
 with st.container():
     st.markdown('<div class="input-box">', unsafe_allow_html=True)
-    prompt1 = st.text_input("Enter your question here.....", key="user_input")
+    prompt1 = st.text_input("Ask your question below:", key="user_input")
     st.markdown('</div>', unsafe_allow_html=True)
     
 # If a question is entered and documents are embedded
