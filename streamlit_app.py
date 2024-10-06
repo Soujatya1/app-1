@@ -85,21 +85,9 @@ if prompt1 and "vectors" in st.session_state:
     for interaction in st.session_state.history[-5:]:  # Get last 5 interactions
         context += f"You: {interaction['question']}\nBot: {interaction['answer']}\n"
 
-    # Determine if the current question refers to the previous answer (more advanced understanding)
-    is_follow_up = len(st.session_state.history) > 0 and (
-        prompt1.lower() in ["elaborate", "put in form of pointers", "tell me more", "expand on that", "explain further"] or
-        ("elaborate" in prompt1.lower()) or 
-        ("more" in prompt1.lower()) or 
-        ("explain" in prompt1.lower())
-    )
-
-    # Prepare the input based on whether it's a follow-up
-    if is_follow_up:
-        previous_answer = st.session_state.history[-1]['answer']
-        prompt_input = f"Please elaborate on the previous answer: {previous_answer}.\n\nNew Question: {prompt1}"
-    else:
-        prompt_input = prompt1
-
+    # Prepare the prompt input using the dynamic context
+    prompt_input = f"Based on the previous context, please respond to the following question: {prompt1}"
+    
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
