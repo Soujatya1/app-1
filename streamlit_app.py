@@ -15,7 +15,7 @@ st.title("Knowledge Management Chatbot")
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-# Custom CSS to style chat messages and position the input box at the bottom
+# Custom CSS for styling chat messages and positioning the input box
 st.markdown("""
     <style>
     .chat-container {
@@ -123,6 +123,9 @@ if uploaded_files:
         
         # Add the current user question to the context
         context += f"\nUser: {user_question}\n"
+
+        # Debugging: Print context to check if it includes previous messages
+        st.write("Debugging Context:", context)
 
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
