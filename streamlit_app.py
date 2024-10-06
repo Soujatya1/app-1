@@ -10,8 +10,6 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
 
-st.title("Knowledge Management Chatbot")
-
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -27,6 +25,8 @@ if uploaded_files:
         
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
+st.title("Knowledge Management Chatbot")
+
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
@@ -34,8 +34,7 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question. Include the source name of the document for the query asked. Do not respond to any questions except
-from the documents uploaded. Maintain conversation history of the past responses and answer the next.
+Please provide the most accurate response based on the question
 <context>
 {context}
 <context>
@@ -53,7 +52,18 @@ def vector_embedding():
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-# Text input for the user to enter the question
+# Display the conversation history at the top
+st.header("Conversation History")
+for interaction in st.session_state.history:
+    st.write(f"**You:** {interaction['question']}")
+    st.write(f"**Bot:** {interaction['answer']}")
+    st.write("---")
+
+# Divider to separate the conversation history from the input box
+st.write("---")
+st.write("Ask your question below:")
+
+# Text input for the user to enter the question at the bottom
 prompt1 = st.text_input("Enter your question here.....")
 
 # Button to embed documents
@@ -86,10 +96,3 @@ if prompt1 and "vectors" in st.session_state:
         for i, doc in enumerate(response["context"]):
             st.write(doc.page_content)
             st.write("--------------------------------")
-
-# Display the conversation history
-st.header("Conversation History")
-for interaction in st.session_state.history:
-    st.write(f"**You:** {interaction['question']}")
-    st.write(f"**Bot:** {interaction['answer']}")
-    st.write("---")
