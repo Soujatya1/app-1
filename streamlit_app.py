@@ -36,7 +36,7 @@ st.markdown("""
         margin: 5px 0;
     }
     .input-box {
-        position: fixed;
+        position: relative;
         bottom: 0;
         width: 100%;
         padding: 10px;
