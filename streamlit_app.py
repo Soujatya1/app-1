@@ -73,9 +73,12 @@ def get_chatmodel_response(question):
     # Call the chat model with the flowmessages
     answer = llm(st.session_state['flowmessages'])
 
-    # Append AI response to the flowmessages and return the answer
-    st.session_state['flowmessages'].append(AIMessage(content=answer['generation']['content']))
-    return answer['generation']['content']
+    # Extract the answer content from the response object
+    answer_content = answer['generation']['content'] if 'generation' in answer else answer.content
+
+    # Append AI response to the flowmessages and return the answer content
+    st.session_state['flowmessages'].append(AIMessage(content=answer_content))
+    return answer_content
 
 # Display the conversation history at the top
 st.header("Conversation History")
