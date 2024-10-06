@@ -12,16 +12,10 @@ import os
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
-    all_documents = []
-
-    # Create a directory to store uploaded files temporarily
-    temp_dir = "uploaded_files"
-    os.makedirs(temp_dir, exist_ok=True)
-
     # Iterate over each uploaded file
     for uploaded_file in uploaded_files:
         # Save each file temporarily
-        with open(os.path.join(temp_dir, uploaded_file.name), "wb") as f:
+        with open(uploaded_file.name, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
         # Success message
@@ -51,7 +45,7 @@ def vector_embedding():
         st.session_state.embeddings=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         st.session_state.loader=PyPDFDirectoryLoader("uploaded_file.name")
         st.session_state.docs=st.session_state.loader.load()
-        st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
+        st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=100)
         st.session_state.final_documents=st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors=FAISS.from_documents(st.session_state.final_documents,st.session_state.embeddings)
 
