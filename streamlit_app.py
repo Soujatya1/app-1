@@ -86,9 +86,6 @@ if st.button("Embed Docs"):
 
 # Function to get a response from the chat model
 def get_chatmodel_response(question):
-    # Append user message to flowmessages
-    st.session_state['flowmessages'].append(HumanMessage(content=question))
-    
     # Prepare the context
     context = get_last_context()
     
@@ -97,21 +94,23 @@ def get_chatmodel_response(question):
         'input': question,         # User's new question
         'history': context        # Past interactions as context
     }
-    
-    # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
-    retriever = st.session_state.vectors.as_retriever()
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    
+
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke(input_data)
+    
+    # Invoke the prompt with the context and question
+    response = llm.invoke({
+        "history": input_data['history'],
+        "input": input_data['input']
+    })
+    
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
     answer = response['answer']
     
-    # Append bot response to flowmessages
+    # Append user message to flowmessages
+    st.session_state['flowmessages'].append(HumanMessage(content=question))
     st.session_state['flowmessages'].append(AIMessage(content=answer))
     
     # Append the interaction to the session state history
@@ -129,6 +128,6 @@ if prompt1 and "vectors" in st.session_state:
     
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response["context"]):
+        for i, doc in enumerate(response.get("context", [])):
             st.write(doc.page_content)
             st.write("--------------------------------")
