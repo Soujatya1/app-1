@@ -15,13 +15,14 @@ st.title("Knowledge Management Chatbot")
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
 
-# Custom CSS to fix the input box at the bottom and style chat messages
+# Custom CSS to style chat messages and position the input box at the bottom
 st.markdown("""
     <style>
     .chat-container {
-        height: 500px;  /* Set a fixed height for the chat area */
-        overflow-y: auto;  /* Enable vertical scrolling */
-        padding-bottom: 60px; /* Add padding to prevent overlap with the input box */
+        height: calc(100vh - 100px); /* Set height of the chat area, adjusting for input box */
+        overflow-y: auto; /* Enable vertical scrolling */
+        padding: 10px;
+        box-sizing: border-box; /* Include padding in height calculations */
     }
     .user-message {
         background-color: #e0f7fa;
@@ -36,13 +37,15 @@ st.markdown("""
         margin: 5px 0;
     }
     .input-box {
-        position: fixed;
+        position: fixed; /* Fix the input box at the bottom */
         bottom: 0;
+        left: 0;
         width: 100%;
         padding: 10px;
         background-color: #ffffff;
         border-top: 1px solid #ddd;
         box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000; /* Ensure it is above other elements */
     }
     </style>
     """, unsafe_allow_html=True)
@@ -113,7 +116,7 @@ if uploaded_files:
     # Create a retrieval chain
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Display the chat history
+    # Display the chat history in a scrollable container
     st.write("### Chat History")
     chat_container = st.container()
 
@@ -122,8 +125,10 @@ if uploaded_files:
             st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
             st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
 
-    # Chat interface
-    user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...")
+    # Chat interface (fixed input box)
+    user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...", 
+                                   label_visibility="collapsed",  # Hide label for cleaner UI
+                                   help="Ask a question about the uploaded documents.")
 
     if user_question:
         # Get response from the retrieval chain with context
@@ -140,12 +145,13 @@ if uploaded_files:
                 'bot': bot_answer
             })
             
-            # Display the updated chat
-            chat_container.empty()  # Clear the chat display before updating
-            for chat in st.session_state['chat_history']:
-                st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-                st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
+            # Clear the chat container before displaying updated history
+            chat_container.empty()
+            
+            with chat_container:
+                for chat in st.session_state['chat_history']:
+                    st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
+                    st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
 
-        # Display a new input box after the latest message
-        #user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
+# HTML for input box at the bottom
 st.markdown("<div class='input-box'></div>", unsafe_allow_html=True)
