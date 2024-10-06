@@ -44,6 +44,7 @@ Questions:{input}
 )
 
 def vector_embedding():
+    
 
     if "vectors" not in st.session_state:
 
@@ -57,7 +58,7 @@ def vector_embedding():
 prompt1=st.text_input("Enter your question here.....")
 
 
-if st.button("Submit"):
+if st.button("Embed Docs"):
     vector_embedding()
 
 import time
