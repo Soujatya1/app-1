@@ -14,15 +14,13 @@ st.title("Knowledge Management Chatbot")
 
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
-
+    
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
-
-# Limit history to the last 5 interactions
-def limit_history():
-    if len(st.session_state.history) > 5:
-        st.session_state.history = st.session_state.history[-5:]
+    
+if 'context' not in st.session_state:
+    st.session_state.context = None  # Initialize context state
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -39,15 +37,15 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
-prompt = ChatPromptTemplate.from_template(
-"""
-Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question.
-<context>
-{context}
-<context>
-Questions: {input}
-"""
+prompt_template = ChatPromptTemplate.from_template(
+    """
+    Answer the questions based on the provided context only.
+    Please provide the most accurate response based on the question
+    <context>
+    {context}
+    <context>
+    Questions: {input}
+    """
 )
 
 def vector_embedding():
@@ -78,36 +76,40 @@ prompt1 = st.text_input("Enter your question here.....")
 if st.button("Embed Docs"):
     vector_embedding()
 
-# Check if the user entered a question and if documents are embedded
+# If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Create a context string that combines the last few interactions
-    context = ""
-    for interaction in st.session_state.history[-5:]:  # Get last 5 interactions
-        context += f"You: {interaction['question']}\nBot: {interaction['answer']}\n"
-
-    # Prepare the prompt input using the dynamic context
-    prompt_input = f"Based on the previous context, please respond to the following question: {prompt1}"
-    
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
+    document_chain = create_stuff_documents_chain(llm, prompt_template)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
-
+    
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt_input, 'context': context})
-    st.write("Response time:", time.process_time() - start)
-
+    response = retrieval_chain.invoke({'input': prompt1})
+    st.write("Response time :", time.process_time() - start)
+    
     # Extract the answer from the response
     answer = response['answer']
+    
+    # Determine if the current question relates to previous context
+    if st.session_state.context is not None:
+        # If the context is different, reset the context
+        if prompt1.lower() not in st.session_state.context.lower():
+            st.session_state.context = prompt1  # Update to the new context
+        else:
+            # Maintain the same context if it's a follow-up
+            st.session_state.context = st.session_state.context
 
-    # Update the interaction history
+    else:
+        # First interaction, set the context
+        st.session_state.context = prompt1
+
+    # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
-    limit_history()  # Limit to the last 5 interactions
-
+    
     # Display the current answer
     st.write(answer)
-
+    
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
         for i, doc in enumerate(response["context"]):
