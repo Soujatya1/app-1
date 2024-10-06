@@ -16,6 +16,9 @@ st.title("Knowledge Management Chatbot")
 if 'history' not in st.session_state:
     st.session_state.history = []
 
+if 'last_answer' not in st.session_state:
+    st.session_state.last_answer = ""
+
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -30,19 +33,18 @@ if uploaded_files:
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-# Chat Prompt Template with dynamic context and history
-prompt_template = """
-Answer the questions based on the provided context and the previous conversation.
-Please provide the most accurate response based on the following:
-<context>
+# Chat Prompt Template
+prompt = ChatPromptTemplate.from_template(
+"""
+Answer the questions based on the provided context only.
+Please provide the most accurate response based on the question.
+
+Context:
 {context}
-</context>
-Previous questions and answers:
-{history}
+
 Questions: {input}
 """
-
-prompt = ChatPromptTemplate.from_template(prompt_template)
+)
 
 def vector_embedding():
     if "vectors" not in st.session_state:
@@ -74,35 +76,31 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Create the history string from the last 10 interactions
-    history_str = "\n".join([f"Q: {interaction['question']}\nA: {interaction['answer']}" for interaction in st.session_state.history[-10:]])
-    
+    # Check if the user is referring to the previous answer
+    if prompt1.lower() in ["elaborate more", "tell me more", "explain further"] and st.session_state.last_answer:
+        prompt1 = f"Please elaborate on: {st.session_state.last_answer}"
+
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
+    # Get the context from the last 10 interactions
+    context = "\n".join([f"Q: {interaction['question']}\nA: {interaction['answer']}" for interaction in st.session_state.history[-10:]])
+    
     # Measure the time to get a response
     start = time.process_time()
-    
-    # Include the history and current question in the input for the chain
-    response = retrieval_chain.invoke({
-        'input': prompt1,
-        'context': "",  # Add a context if required (like document context)
-        'history': history_str
-    })
-    
+    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
     answer = response['answer']
     
+    # Save the last answer
+    st.session_state.last_answer = answer
+    
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
-    
-    # Limit the history to the last 10 interactions
-    if len(st.session_state.history) > 10:
-        st.session_state.history = st.session_state.history[-10:]
     
     # Display the current answer
     st.write(answer)
