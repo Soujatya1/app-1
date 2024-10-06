@@ -199,7 +199,7 @@ prompt1 = st.text_input("Enter your question here.....")
 
 with st.sidebar:
     st.header("Language Selection")
-    selected_language = st.selectbox("Select language for translation:", language_options)
+    selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
 
 # Dropdown for language selection
 selected_language = st.selectbox("Select language for translation:", language_options)
