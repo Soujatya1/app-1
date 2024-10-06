@@ -77,13 +77,14 @@ def get_chatmodel_response_from_docs(question, context):
     # Use the FAISS vector store to retrieve relevant documents
     relevant_docs = st.session_state.vectors.similarity_search(question)
     
-    # Ensure relevant_docs is a list of documents or strings
+    # Ensure relevant_docs is a list of documents
     if not relevant_docs:
         return "No relevant documents found."
     
     # Run the chain with the context and retrieved documents
-    response = document_chain.run(input_documents=relevant_docs, input=question)
-    
+    # You might need to adapt the method call here if the API expects different parameters
+    response = document_chain({"input_documents": relevant_docs, "input": question})
+
     # Ensure that the response is strictly from the document
     return response
 
