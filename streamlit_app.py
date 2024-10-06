@@ -13,6 +13,25 @@ import requests
 
 st.title("Knowledge Management Chatbot")
 
+st.markdown("""
+    <style>
+    .chat-input-box {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        padding: 10px;
+        background-color: white;
+        z-index: 100;
+        border-top: 1px solid #f0f0f0;
+    }
+    .stTextInput > div > input {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
 
