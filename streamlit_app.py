@@ -19,6 +19,11 @@ if not os.path.exists("uploaded_files"):
 if 'history' not in st.session_state:
     st.session_state.history = []
 
+# Limit history to the last 5 interactions
+def limit_history():
+    if len(st.session_state.history) > 5:
+        st.session_state.history = st.session_state.history[-5:]
+
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -37,7 +42,7 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question
+Please provide the most accurate response based on the question.
 <context>
 {context}
 <context>
@@ -90,6 +95,7 @@ if prompt1 and "vectors" in st.session_state:
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
+    limit_history()  # Limit to the last 5 interactions
     
     # Display the current answer
     st.write(answer)
