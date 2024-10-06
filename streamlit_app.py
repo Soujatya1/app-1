@@ -49,11 +49,17 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 
 # Chat Prompt Template with dynamic context
 def create_prompt(input_text):
+    # Join the last interactions to give more context
+    previous_interactions = "\n".join(
+        [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]  # Last 5 interactions
+    )
+    
     return ChatPromptTemplate.from_template(
         f"""
         Answer the questions based on the provided context only.
         Please provide the most accurate response based on the question.
         Previous Context: {st.session_state.last_context}
+        Previous Interactions:\n{previous_interactions}
         <context>
         {{context}}
         <context>
