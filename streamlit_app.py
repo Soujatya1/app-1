@@ -2,11 +2,12 @@ import streamlit as st
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains import create_retrieval_chain
 from langchain.vectorstores import FAISS
 from langchain.document_loaders import PyPDFDirectoryLoader
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
+from langchain.chains import LLMChain, StuffDocumentsChain
+from langchain.chains.combine_documents import create_stuff_documents_chain
 import os
 import time
 
@@ -22,7 +23,6 @@ if 'flowmessages' not in st.session_state:
 
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
-
 
 # Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
@@ -72,17 +72,17 @@ def get_last_context(question):
 
 # Function to get AI response based strictly on documents
 def get_chatmodel_response_from_docs(question, context):
-    # Retrieve the relevant document context from the vector store
-    retriever = st.session_state.vectors.as_retriever()
+    # Create the document retrieval chain using the LLM and prompt
+    document_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
     
-    # Create the document retrieval chain using the prompt
-    document_chain = create_retrieval_chain(retriever=retriever, chain_type="stuff", question_prompt=prompt, llm=llm)
+    # Use the FAISS vector store to retrieve relevant documents
+    relevant_docs = st.session_state.vectors.similarity_search(question)
     
-    # Use the retrieval chain to get a response based on the document context
-    response = document_chain({'input': question, 'context': context})
+    # Run the chain with the context and retrieved documents
+    response = document_chain.run(input_documents=relevant_docs, input=question, context=context)
     
     # Ensure that the response is strictly from the document
-    return response['answer']
+    return response
 
 # Display the conversation history at the top
 st.header("Conversation History")
