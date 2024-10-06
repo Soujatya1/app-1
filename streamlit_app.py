@@ -8,7 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 from langchain.chains import LLMChain, StuffDocumentsChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import LLMChain, StuffDocumentsChain, create_stuff_documents_chain
+from langchain.chains.combine_documents import LLMChain, StuffDocumentsChain, create_stuff_documents_chain
 import os
 import time
 
