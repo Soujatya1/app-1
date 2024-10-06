@@ -9,6 +9,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
+from langchain_core.schema import SystemMessage, HumanMessage, AIMessage
 
 st.title("Knowledge Management Chatbot")
 
