@@ -9,7 +9,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
-import requests  # Make sure to import requests for API calls
+import requests
 
 st.title("Knowledge Management Chatbot")
 
@@ -42,10 +42,6 @@ if uploaded_files:
         st.session_state.docs = st.session_state.loader.load()
         st.write(f"Loaded {len(st.session_state.docs)} documents.")
 
-        # Debugging: Print document metadata to check if source names are available
-        #for doc in st.session_state.docs:
-        #    st.write(f"Document metadata: {doc.metadata}")  # This should show the filename
-
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
@@ -56,9 +52,8 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 # Chat Prompt Template with dynamic context
 def create_prompt(input_text):
     previous_interactions = "\n".join(
-        [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]  # Last 5 interactions
+        [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]
     )
-
     return ChatPromptTemplate.from_template(
         f"""
         Answer the questions based on the provided context only.
@@ -72,12 +67,11 @@ def create_prompt(input_text):
         """
     )
 
-# Add your translation function here
-def translate_response(response_text, target_language):
+# Translation function for input and output
+def translate_text(text, source_language, target_language):
     api_url = "https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline/"
     user_id = "bdeee189dc694351b6b248754a918885"
     ulca_api_key = "099c9c6409-1308-4503-8d33-64cc5e49a07f"
-    source_language = "en"
 
     headers = {
         "Content-Type": "application/json",
@@ -109,10 +103,10 @@ def translate_response(response_text, target_language):
             response_data = response.json()
             service_id = response_data["pipelineResponseConfig"][0]["config"][0]["serviceId"]
         else:
-            return response_text
+            return text
 
     except Exception as e:
-        return response_text
+        return text
 
     compute_payload = {
         "pipelineTasks": [
@@ -130,7 +124,7 @@ def translate_response(response_text, target_language):
         "inputData": {
             "input": [
                 {
-                    "source": response_text
+                    "source": text
                 }
             ]
         }
@@ -203,32 +197,35 @@ with st.sidebar:
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
+    # Translate the user input to English if it's not in English
+    if selected_language != "English":
+        translated_prompt = translate_text(prompt1, language_mapping[selected_language], "en")
+    else:
+        translated_prompt = prompt1
+
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, create_prompt(prompt1))
+    document_chain = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1})
+    response = retrieval_chain.invoke({'input': translated_prompt})
     st.write("Response time :", time.process_time() - start)
 
     # Extract the answer from the response
     answer = response['answer']
 
+    # Translate the answer back to the user's selected language
+    if selected_language != "English":
+        translated_answer = translate_text(answer, "en", language_mapping[selected_language])
+        answer = translated_answer if translated_answer else answer
+
     # Update the last context with the new answer
     st.session_state.last_context = answer
 
-    # Check if the user selected a language other than English
-    if selected_language != "English":
-        translated_answer = translate_response(answer, language_mapping[selected_language])
-        answer = translated_answer if translated_answer else answer  # Use the original answer if translation fails
-
-        # Append the interaction to the session state history with the translated answer
-        st.session_state.history.append({"question": prompt1, "answer": translated_answer or answer})
-    else:
-        # Append the interaction to the session state history with the original answer
-        st.session_state.history.append({"question": prompt1, "answer": answer})
+    # Append the interaction to the session state history
+    st.session_state.history.append({"question": prompt1, "answer": answer})
 
     # Display the current answer
     st.write(answer)
@@ -237,8 +234,6 @@ if prompt1 and "vectors" in st.session_state:
     with st.expander("Document Similarity Search"):
         if "context" in response:
             for i, doc in enumerate(response["context"]):
-                # Assuming doc contains a 'metadata' field with the filename
                 doc_name = doc.metadata.get("source", "Unknown Document")
-                st.write(f"Document: {doc_name}")  # Display the document name
+                st.write(f"Document: {doc_name}")
                 st.write(doc.page_content)
-                st.write("--------------------------------")
