@@ -101,11 +101,11 @@ def get_chatmodel_response(question):
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
-    answer = response['answer']
+    answer = response['answer']  # Assuming this is how the answer is accessed in your API
     
     # Append user message to flowmessages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
-    st.session_state['flowmessages'].append(AIMessage(content=answer))
+    st.session_state['flowmessages'].append(AIMessage(content=answer))  # Change here
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": question, "answer": answer})
