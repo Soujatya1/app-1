@@ -10,8 +10,10 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
 
+# Set the title of the app
 st.title("Knowledge Management Chatbot")
 
+# Create a directory for uploaded files if it doesn't exist
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
 
@@ -21,6 +23,7 @@ if 'history' not in st.session_state:
 if 'context' not in st.session_state:
     st.session_state.context = ""
 
+# File uploader for PDF documents
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -35,11 +38,11 @@ if uploaded_files:
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-# Chat Prompt Template
+# Define the prompt template for the chatbot
 prompt_template = ChatPromptTemplate.from_template(
     """
     Answer the questions based on the provided context only.
-    Please provide the most accurate response based on the question
+    Please provide the most accurate response based on the question.
     <context>
     {context}
     <context>
@@ -47,6 +50,7 @@ prompt_template = ChatPromptTemplate.from_template(
     """
 )
 
+# Function to embed documents
 def vector_embedding():
     if "vectors" not in st.session_state:
         st.session_state.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
@@ -77,12 +81,17 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Check if the context is related to the previous questions
-    related_context = ""
+    # Determine the context for the current question
     if st.session_state.history:
         last_question = st.session_state.history[-1]["question"]
-        if prompt1.lower() in last_question.lower():
-            related_context = st.session_state.context  # Keep the same context if related
+        # If the last question and current question are related, keep the context
+        if last_question.lower() in prompt1.lower() or prompt1.lower() in last_question.lower():
+            current_context = st.session_state.context
+        else:
+            # If not related, reset context
+            current_context = ""
+    else:
+        current_context = ""
 
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt_template)
@@ -91,14 +100,14 @@ if prompt1 and "vectors" in st.session_state:
 
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1, 'context': related_context})
+    response = retrieval_chain.invoke({'input': prompt1, 'context': current_context})
     st.write("Response time :", time.process_time() - start)
 
     # Extract the answer from the response
-    answer = response['answer']
+    answer = response.get('answer', "Sorry, I couldn't find an answer.")
 
-    # If the question is not related to the last question, update context
-    if not related_context:
+    # Update context if the current question is different from the last question
+    if current_context == "":
         st.session_state.context = prompt1  # Update context to the new question
 
     # Append the interaction to the session state history
@@ -107,8 +116,8 @@ if prompt1 and "vectors" in st.session_state:
     # Display the current answer
     st.write(answer)
 
-    # With a streamlit expander to show the document similarity search results
+    # Show the document similarity search results in an expander
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response.get("context", [])):
+        for doc in response.get("context", []):
             st.write(doc.page_content)
             st.write("--------------------------------")
