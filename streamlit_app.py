@@ -70,7 +70,6 @@ def get_last_context(question):
     return last_context
 
 # Function to get AI response based strictly on documents
-# Function to get AI response based strictly on documents
 def get_chatmodel_response_from_docs(question, context):
     # Create the document retrieval chain using the LLM and prompt
     document_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
@@ -81,10 +80,18 @@ def get_chatmodel_response_from_docs(question, context):
     # Ensure relevant_docs is a list of documents
     if not relevant_docs:
         return "No relevant documents found."
-
+    
+    # Convert strings to Document objects if they are not already
+    documents = []
+    for doc in relevant_docs:
+        if isinstance(doc, str):
+            documents.append({"page_content": doc})  # Creating a dict for compatibility
+        else:
+            documents.append(doc)  # Assuming it's already a Document object
+    
     # Execute the chain
     response = document_chain.invoke({
-        "input_documents": relevant_docs,
+        "input_documents": documents,
         "input": question,
         "context": context,
     })
