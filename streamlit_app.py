@@ -219,13 +219,16 @@ if prompt1 and "vectors" in st.session_state:
     # Update the last context with the new answer
     st.session_state.last_context = answer
 
-    # Append the interaction to the session state history
-    st.session_state.history.append({"question": prompt1, "answer": answer})
-
-    # Translate the answer if it's not in English
+    # Check if the user selected a language other than English
     if selected_language != "English":
         translated_answer = translate_response(answer, language_mapping[selected_language])
         answer = translated_answer if translated_answer else answer  # Use the original answer if translation fails
+
+        # Append the interaction to the session state history with the translated answer
+        st.session_state.history.append({"question": prompt1, "answer": translated_answer or answer})
+    else:
+        # Append the interaction to the session state history with the original answer
+        st.session_state.history.append({"question": prompt1, "answer": answer})
 
     # Display the current answer
     st.write(answer)
