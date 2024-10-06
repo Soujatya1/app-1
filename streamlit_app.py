@@ -15,8 +15,6 @@ st.title("Knowledge Management Chatbot")
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
-if 'last_response' not in st.session_state:
-    st.session_state.last_response = ""
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -56,7 +54,7 @@ def vector_embedding():
 
 # Display the conversation history at the top
 st.header("Conversation History")
-for interaction in st.session_state.history[-10:]:  # Show last 10 interactions
+for interaction in st.session_state.history:
     st.write(f"**You:** {interaction['question']}")
     st.write(f"**Bot:** {interaction['answer']}")
     st.write("---")
@@ -72,17 +70,8 @@ prompt1 = st.text_input("Enter your question here.....")
 if st.button("Embed Docs"):
     vector_embedding()
 
-def is_referring_to_previous(input_text):
-    """Check if the user input is likely referring to the previous interaction."""
-    # A simple check: if the input is too short (e.g., < 5 words), assume it's a vague instruction
-    return len(input_text.split()) < 3
-
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Check if the user is referring to the last response
-    if is_referring_to_previous(prompt1):
-        prompt1 = f"{prompt1}. Based on the previous answer: {st.session_state.last_response}"
-    
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
@@ -98,9 +87,6 @@ if prompt1 and "vectors" in st.session_state:
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
-    
-    # Store the latest response for future reference
-    st.session_state.last_response = answer
     
     # Display the current answer
     st.write(answer)
