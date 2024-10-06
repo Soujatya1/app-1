@@ -79,7 +79,7 @@ def get_chatmodel_response_from_docs(question, context):
     relevant_docs = st.session_state.vectors.similarity_search(question)
     
     # Run the chain with the context and retrieved documents
-    response = document_chain.run(input_documents=relevant_docs, input=question, context=context)
+    response = document_chain.invoke({'input_documents': relevant_docs, 'input': question, 'context': context})
     
     # Ensure that the response is strictly from the document
     return response
