@@ -31,8 +31,7 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template with dynamic context and history
-prompt = ChatPromptTemplate.from_template(
-"""
+prompt_template = """
 Answer the questions based on the provided context and the previous conversation.
 Please provide the most accurate response based on the following:
 <context>
@@ -40,9 +39,10 @@ Please provide the most accurate response based on the following:
 </context>
 Previous questions and answers:
 {history}
-Questions:{input}
+Questions: {input}
 """
-)
+
+prompt = ChatPromptTemplate.from_template(prompt_template)
 
 def vector_embedding():
     if "vectors" not in st.session_state:
@@ -88,6 +88,7 @@ if prompt1 and "vectors" in st.session_state:
     # Include the history and current question in the input for the chain
     response = retrieval_chain.invoke({
         'input': prompt1,
+        'context': "",  # Add a context if required (like document context)
         'history': history_str
     })
     
