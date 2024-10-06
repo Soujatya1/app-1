@@ -12,13 +12,12 @@ import os
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
-    # Iterate over each uploaded file
     for uploaded_file in uploaded_files:
-        # Save each file temporarily
-        with open(uploaded_file.name, "wb") as f:
+        # Save each file temporarily in the created directory
+        file_path = os.path.join("uploaded_files", uploaded_file.name)
+        with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
         
-        # Success message
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
 st.title("Knowledge Management Chatbot")
@@ -43,7 +42,7 @@ def vector_embedding():
     if "vectors" not in st.session_state:
 
         st.session_state.embeddings=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        st.session_state.loader=PyPDFDirectoryLoader("uploaded_file.name")
+        st.session_state.loader=PyPDFDirectoryLoader("uploaded_files")
         st.session_state.docs=st.session_state.loader.load()
         st.write(f"Loaded {len(st.session_state.docs)} documents.")
         st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=100)
