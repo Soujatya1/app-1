@@ -121,9 +121,8 @@ if uploaded_files:
         # Prepare the context from the chat history
         context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
         
-        # Limit the context to prevent exceeding token limits
-        context = context.split()[-2048:]  # Keep the last 2048 words, adjust as necessary
-        context = " ".join(context)
+        # Add the current user question to the context
+        context += f"\nUser: {user_question}\n"
 
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
