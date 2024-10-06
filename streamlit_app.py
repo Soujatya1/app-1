@@ -14,7 +14,7 @@ st.title("Knowledge Management Chatbot")
 
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
-    
+
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -46,7 +46,7 @@ Please provide the most accurate response based on the question.
 <context>
 {context}
 <context>
-Questions:{input}
+Questions: {input}
 """
 )
 
@@ -78,28 +78,38 @@ prompt1 = st.text_input("Enter your question here.....")
 if st.button("Embed Docs"):
     vector_embedding()
 
-# If a question is entered and documents are embedded
+# Check if the user entered a question and if documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    
+
     # Measure the time to get a response
     start = time.process_time()
     response = retrieval_chain.invoke({'input': prompt1})
-    st.write("Response time :", time.process_time() - start)
-    
+    st.write("Response time:", time.process_time() - start)
+
     # Extract the answer from the response
     answer = response['answer']
-    
-    # Append the interaction to the session state history
+
+    # Update the interaction history
     st.session_state.history.append({"question": prompt1, "answer": answer})
     limit_history()  # Limit to the last 5 interactions
-    
+
+    # Determine if context switching is needed
+    if len(st.session_state.history) > 1:
+        last_question = st.session_state.history[-2]["question"]
+        # Simple logic to determine relevance (can be improved based on use case)
+        if last_question and not prompt1.lower().startswith(last_question.lower()):  # Assuming non-relevance if question does not relate
+            # Clear the history for a fresh context
+            st.session_state.history.clear()
+            st.session_state.history.append({"question": prompt1, "answer": answer})
+            st.write("Context switched to new question.")
+
     # Display the current answer
     st.write(answer)
-    
+
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
         for i, doc in enumerate(response["context"]):
