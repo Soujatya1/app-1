@@ -36,7 +36,7 @@ if uploaded_files:
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
 # Initialize LLM model
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
+llm = ChatGroq(groq_api_key="YOUR_API_KEY", model_name="Llama3-8b-8192")
 
 # Define the prompt template for the chatbot
 prompt_template = ChatPromptTemplate.from_template(
@@ -81,17 +81,16 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Determine the context for the current question
-    if st.session_state.history:
-        last_question = st.session_state.history[-1]["question"]
-        # If the last question and current question are related, keep the context
-        if last_question.lower() in prompt1.lower() or prompt1.lower() in last_question.lower():
-            current_context = st.session_state.context
-        else:
-            # If not related, reset context
-            current_context = ""
+    # Get the last question and answer for context
+    last_question = st.session_state.history[-1]["question"] if st.session_state.history else ""
+    print(f"Last Question: {last_question}")  # Debugging output
+
+    # Check if the last question and current question are related
+    is_related = last_question.lower() in prompt1.lower() or prompt1.lower() in last_question.lower()
+    if is_related:
+        current_context = st.session_state.context  # Use existing context
     else:
-        current_context = ""
+        current_context = ""  # Reset context
 
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt_template)
@@ -105,10 +104,10 @@ if prompt1 and "vectors" in st.session_state:
 
     # Extract the answer from the response
     answer = response.get('answer', "Sorry, I couldn't find an answer.")
+    print(f"Answer: {answer}")  # Debugging output
 
-    # Update context if the current question is different from the last question
-    if current_context == "":
-        st.session_state.context = prompt1  # Update context to the new question
+    # Update context based on current question
+    st.session_state.context = prompt1 if not is_related else st.session_state.context
 
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
@@ -120,4 +119,4 @@ if prompt1 and "vectors" in st.session_state:
     with st.expander("Document Similarity Search"):
         for doc in response.get("context", []):
             st.write(doc.page_content)
-            st.write("--------------------------------")
+            st.write("--------------------------
