@@ -75,7 +75,7 @@ if st.button("Embed Docs"):
 def is_referring_to_previous(input_text):
     """Check if the user input is likely referring to the previous interaction."""
     # A simple check: if the input is too short (e.g., < 5 words), assume it's a vague instruction
-    return len(input_text.split()) < 5
+    return len(input_text.split()) < 3
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
