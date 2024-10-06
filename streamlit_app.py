@@ -106,7 +106,7 @@ if prompt1 and "vectors" in st.session_state:
     context = get_last_context()
     
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
+    document_chain = create_stuff_documents_chain(llm, chat_prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
