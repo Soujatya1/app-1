@@ -8,6 +8,7 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 from langchain.chains import LLMChain, StuffDocumentsChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.chains import LLMChain, StuffDocumentsChain, create_stuff_documents_chain
 import os
 import time
 
@@ -75,8 +76,12 @@ def get_chatmodel_response_from_docs(question, context):
     # Use the FAISS vector store to retrieve relevant documents
     relevant_docs = st.session_state.vectors.similarity_search(question)
     
+    # Ensure relevant_docs is a list of documents or strings
+    if not relevant_docs:
+        return "No relevant documents found."
+    
     # Run the chain with the context and retrieved documents
-    response = document_chain.run(input_documents=relevant_docs, input=question, context=context)
+    response = document_chain.run(input_documents=relevant_docs, input=question)
     
     # Ensure that the response is strictly from the document
     return response
