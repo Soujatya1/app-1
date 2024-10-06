@@ -35,7 +35,7 @@ prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
 Please provide the most accurate response based on the question. Include the source name of the document for the query asked. Do not respond to any questions except
-from the documents uploaded. Maintain conversation history of the past questions and answer the next.
+from the documents uploaded. Maintain conversation history of the past responses and answer the next.
 <context>
 {context}
 <context>
