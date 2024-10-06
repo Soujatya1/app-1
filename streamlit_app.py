@@ -205,9 +205,6 @@ for interaction in st.session_state.history:
 st.write("---")
 st.write("Ask your question below:")
 
-# Text input for the user to enter the question at the bottom
-prompt1 = st.text_input("Enter your question here.....")
-
 with st.sidebar:
     st.header("Language Selection")
     selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
