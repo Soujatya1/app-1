@@ -18,18 +18,10 @@ if 'chat_history' not in st.session_state:
 # Custom CSS to fix the input box at the bottom and style chat messages
 st.markdown("""
     <style>
-    .input-box {
-        position: fixed;
-        bottom: 0;
-        width: 100%;
-        padding: 10px;
-        background-color: #ffffff;
-        border-top: 1px solid #ddd;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    }
-    .chat-box {
-        max-height: 500px;
-        overflow-y: auto;
+    .chat-container {
+        height: 500px;  /* Set a fixed height for the chat area */
+        overflow-y: auto;  /* Enable vertical scrolling */
+        padding-bottom: 60px; /* Add padding to prevent overlap with the input box */
     }
     .user-message {
         background-color: #e0f7fa;
@@ -42,6 +34,15 @@ st.markdown("""
         border-left: 5px solid #f57c00;
         padding: 10px;
         margin: 5px 0;
+    }
+    .input-box {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        padding: 10px;
+        background-color: #ffffff;
+        border-top: 1px solid #ddd;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     }
     </style>
     """, unsafe_allow_html=True)
