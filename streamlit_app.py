@@ -15,22 +15,20 @@ st.title("Knowledge Management Chatbot")
 
 st.markdown("""
     <style>
-    .chat-input-box {
+    .input-box {
         position: fixed;
         bottom: 0;
         width: 100%;
-        padding: 10px;
         background-color: white;
-        z-index: 100;
-        border-top: 1px solid #f0f0f0;
-    }
-    .stTextInput > div > input {
-        width: 100%;
         padding: 10px;
-        font-size: 16px;
+        z-index: 100;
+    }
+    .conversation-history {
+        max-height: 75vh;
+        overflow-y: auto;
     }
     </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
@@ -214,6 +212,11 @@ with st.sidebar:
     st.header("Language Selection")
     selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
 
+with st.container():
+    st.markdown('<div class="input-box">', unsafe_allow_html=True)
+    prompt1 = st.text_input("Enter your question here.....", key="user_input")
+    st.markdown('</div>', unsafe_allow_html=True)
+    
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Translate the user input to English if it's not in English
