@@ -7,7 +7,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFDirectoryLoader
-from langchain_core.messages import HumanMessage, AIMessage  # Importing required message types
 import os
 import time
 
@@ -16,8 +15,6 @@ st.title("Knowledge Management Chatbot")
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
-if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = []
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -34,17 +31,13 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
-prompt_template = ChatPromptTemplate.from_template(
+prompt = ChatPromptTemplate.from_template(
 """
-The following is a conversation history between a user and a bot.
-Use the context of the conversation history to respond to the user's question accurately.
-
-CONVERSATION HISTORY:
-{history}
-
-NEW QUESTION: {input}
-
-Please generate a relevant response based on the conversation.
+Use the following context for answering the question:
+<context>
+{context}
+</context>
+Questions: {input}
 """
 )
 
@@ -58,43 +51,11 @@ def vector_embedding():
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
+# Function to form context from the last 10 interactions
 def get_last_context():
-    return "\n".join([f"**You:** {msg['question']}\n**Bot:** {msg['answer']}" for msg in st.session_state.history[-10:]])
-
-def get_chatmodel_response(question):
-    # Prepare the context
-    context = get_last_context()
-    
-    # Create input for the prompt
-    prompt_input = prompt_template.format(history=context, input=question)
-    
-    # Measure the time to get a response
-    start = time.process_time()
-    
-    # Call the model with the formatted prompt
-    response = llm.invoke(prompt_input)  # Pass the formatted string directly
-    
-    st.write("Response time :", time.process_time() - start)
-    
-    # Debugging: Check the response from the LLM
-    st.write("Response from LLM:", response)  # Debugging information
-    
-    # Check if the response contains a valid output
-    if isinstance(response, str):  # If the response is directly a string
-        answer = response
-    elif isinstance(response, dict) and 'answer' in response:
-        answer = response['answer']  # Access the answer if it’s a dict
-    else:
-        answer = "I'm sorry, I couldn't generate a valid response."
-    
-    # Append user message to flowmessages
-    st.session_state['flowmessages'].append(HumanMessage(content=question))
-    st.session_state['flowmessages'].append(AIMessage(content=answer))  # Ensure AIMessage is correctly instantiated
-    
-    # Append the interaction to the session state history
-    st.session_state.history.append({"question": question, "answer": answer})
-    
-    return answer
+    history = st.session_state.history[-10:]  # Take the last 10 interactions
+    context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
+    return context
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -116,14 +77,30 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    answer = get_chatmodel_response(prompt1)
+    # Retrieve last 10 interactions to form the context
+    context = get_last_context()
+    
+    # Create chains for document retrieval and question answering
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    retriever = st.session_state.vectors.as_retriever()
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    
+    # Measure the time to get a response
+    start = time.process_time()
+    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
+    st.write("Response time :", time.process_time() - start)
+    
+    # Extract the answer from the response
+    answer = response['answer']
+    
+    # Append the interaction to the session state history
+    st.session_state.history.append({"question": prompt1, "answer": answer})
     
     # Display the current answer
     st.write(answer)
     
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        if "context" in locals():  # Ensure context exists
-            for i, doc in enumerate(context):
-                st.write(doc.page_content)
-                st.write("--------------------------------")
+        for i, doc in enumerate(response["context"]):
+            st.write(doc.page_content)
+            st.write("--------------------------------")
