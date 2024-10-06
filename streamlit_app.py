@@ -124,7 +124,9 @@ if prompt1 and "vectors" in st.session_state:
     
     # With a Streamlit expander to show the document similarity search results
     # With a Streamlit expander to show the document similarity search results
+    # With a Streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
         for i, doc in enumerate(relevant_docs):
             st.write(doc.page_content if hasattr(doc, 'page_content') else doc)
             st.write("--------------------------------")
+
