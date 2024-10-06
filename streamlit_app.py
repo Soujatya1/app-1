@@ -30,17 +30,21 @@ if uploaded_files:
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-# Chat Prompt Template
-prompt = ChatPromptTemplate.from_template(
-"""
+# Modify Chat Prompt Template to include previous context
+def create_chat_prompt(history, context):
+    history_text = "\n".join([f"You: {item['question']}\nBot: {item['answer']}" for item in history])
+    return ChatPromptTemplate.from_template(
+        f"""
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question
+Please provide the most accurate response based on the question and the conversation so far.
 <context>
 {context}
-<context>
-Questions:{input}
+</context>
+Previous conversation:
+{history_text}
+Questions: {{input}}
 """
-)
+    )
 
 def vector_embedding():
     if "vectors" not in st.session_state:
@@ -73,7 +77,7 @@ if st.button("Embed Docs"):
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
+    document_chain = create_stuff_documents_chain(llm, create_chat_prompt(st.session_state.history, "{context}"))
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
