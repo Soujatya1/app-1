@@ -122,7 +122,7 @@ if uploaded_files:
             st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
 
     # Chat interface
-    #user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
+    user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
 
     if user_question:
         # Get response from the retrieval chain with context
@@ -146,4 +146,4 @@ if uploaded_files:
                 st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
 
         # Display a new input box after the latest message
-        user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
+        #user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
