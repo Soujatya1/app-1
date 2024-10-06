@@ -84,7 +84,7 @@ if uploaded_files:
     vector_db = FAISS.from_documents(all_documents, hf_embedding)
 
     # Craft ChatPrompt Template
-    prompt = ChatPromptTemplate.from_template("""
+    prompt_template = ChatPromptTemplate.from_template("""
     You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
     Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
 
@@ -92,13 +92,6 @@ if uploaded_files:
     - Answer in a point-wise format when requested.
     - If the user asks for tabular format, try to present information in a table-like structure.
     - Always refer to the conversation history when applicable.
-    Example interaction:
-    User: What is the summary of the first document?
-    Bot: Provides the summary.
-    User: Can you provide this in point-wise format?
-    Bot: Reformats the previous response into a point-wise list.
-    User: Can you present it in a table format?
-    Bot: Reformats the same information into a table-like structure.
 
     <context>
     {context}
@@ -108,7 +101,7 @@ if uploaded_files:
     """)
 
     # Stuff Document Chain Creation
-    document_chain = create_stuff_documents_chain(llm, prompt)
+    document_chain = create_stuff_documents_chain(llm, prompt_template)
 
     # Retriever from vector store
     retriever = vector_db.as_retriever()
@@ -131,9 +124,17 @@ if uploaded_files:
                                    help="Ask a question about the uploaded documents.")
 
     if user_question:
+        # Prepare the context from the chat history
+        context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
+        
+        # Limit the context to prevent exceeding token limits
+        if len(context.split()) > 2048:  # Adjust this based on your LLM's token limit
+            context = " ".join(context.split()[-2048:])  # Keep only the last 2048 words
+
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
-            "input": user_question
+            "input": user_question,
+            "context": context
         })
         
         if response:
