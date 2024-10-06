@@ -148,3 +148,4 @@ if uploaded_files:
 
         # Display a new input box after the latest message
         #user_question = st.text_input("Ask a question about the relevant document", key=f"input_{len(st.session_state['chat_history'])}", placeholder="Type your question here...")
+st.markdown("<div class='input-box'></div>", unsafe_allow_html=True)
