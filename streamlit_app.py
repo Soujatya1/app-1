@@ -210,9 +210,9 @@ with st.sidebar:
     st.header("Language Selection")
     selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
 
-st.markdown('<div class="input-box">', unsafe_allow_html=True)
-prompt1 = st.text_input("Enter your question here.....", key="user_input")
-st.markdown('</div>', unsafe_allow_html=True)
+input_box = st.empty()
+with input_box.container():
+    prompt1 = st.text_input("Enter your question here.....", key="user_input", placeholder="Type your question...")
     
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
