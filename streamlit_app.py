@@ -201,9 +201,6 @@ with st.sidebar:
     st.header("Language Selection")
     selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
 
-# Dropdown for language selection
-selected_language = st.selectbox("Select language for translation:", language_options)
-
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Create chains for document retrieval and question answering
