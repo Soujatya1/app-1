@@ -2,28 +2,23 @@ import streamlit as st
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.vectorstores import FAISS
-from langchain.document_loaders import PyPDFDirectoryLoader
-from langchain.prompts import ChatPromptTemplate
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
-from langchain.chains import LLMChain, StuffDocumentsChain
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import LLMChain, StuffDocumentsChain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
 
 st.title("Knowledge Management Chatbot")
 
+if not os.path.exists("uploaded_files"):
+    os.makedirs("uploaded_files")
+    
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-# Initialize flowmessages if not present
-if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [SystemMessage(content="You are a document-based AI assistant")]
-
-# Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -41,11 +36,12 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 # Chat Prompt Template
 prompt = ChatPromptTemplate.from_template(
 """
-Use the following context from the uploaded documents for answering the question:
+Answer the questions based on the provided context only.
+Please provide the most accurate response based on the question
 <context>
 {context}
-</context>
-Questions: {input}
+<context>
+Questions:{input}
 """
 )
 
@@ -58,47 +54,6 @@ def vector_embedding():
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
-
-# Function to form context from the last 10 interactions only if relevant
-def get_last_context(question):
-    last_context = ""
-    history = st.session_state.history[-10:]  # Take the last 10 interactions
-    for h in history:
-        # If the new question is related to the previous one (heuristically)
-        if question in h['question'] or h['question'] in question:
-            last_context += f"Q: {h['question']}\nA: {h['answer']}\n"
-    return last_context
-
-# Function to get AI response based strictly on documents
-def get_chatmodel_response_from_docs(question, context):
-    # Create the document retrieval chain using the LLM and prompt
-    document_chain = create_stuff_documents_chain(llm=llm, prompt=prompt)
-    
-    # Use the FAISS vector store to retrieve relevant documents
-    relevant_docs = st.session_state.vectors.similarity_search(question)
-    
-    # Ensure relevant_docs is a list of documents
-    if not relevant_docs:
-        return "No relevant documents found."
-    
-    # Convert strings to Document objects if they are not already
-    documents = []
-    for doc in relevant_docs:
-        if isinstance(doc, str):
-            documents.append({"page_content": doc})  # Creating a dict for compatibility
-        else:
-            documents.append(doc)  # Assuming it's already a Document object
-    
-    # Execute the chain
-    response = document_chain.invoke({
-        "input_documents": documents,
-        "input": question,
-        "context": context,
-    })
-
-    # Ensure that the response is strictly from the document
-    return response['output']  # Adjust this according to the response structure you expect
-
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -120,17 +75,18 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Retrieve context based on whether the new question relates to past history
-    context = get_last_context(prompt1)
+    # Create chains for document retrieval and question answering
+    document_chain = create_stuff_documents_chain(llm, prompt)
+    retriever = st.session_state.vectors.as_retriever()
+    retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
     # Measure the time to get a response
     start = time.process_time()
+    response = retrieval_chain.invoke({'input': prompt1})
+    st.write("Response time :", time.process_time() - start)
     
-    # Get the answer strictly from the documents
-    answer = get_chatmodel_response_from_docs(prompt1, context)
-    
-    # Display the response time
-    st.write("Response time:", time.process_time() - start)
+    # Extract the answer from the response
+    answer = response['answer']
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
@@ -138,11 +94,8 @@ if prompt1 and "vectors" in st.session_state:
     # Display the current answer
     st.write(answer)
     
-    # With a Streamlit expander to show the document similarity search results
+    # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        # Retrieve the relevant documents based on similarity
-        response = st.session_state.vectors.similarity_search_with_score(prompt1)
-        for i, (doc, score) in enumerate(response):
-            st.write(f"Document {i + 1} (Score: {score}):")
+        for i, doc in enumerate(response["context"]):
             st.write(doc.page_content)
             st.write("--------------------------------")
