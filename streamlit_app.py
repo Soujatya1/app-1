@@ -37,7 +37,7 @@ if uploaded_files:
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
 # Initialize LLM model
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
+llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192", temperature = 0.2)
 
 # Chat Prompt Template
 prompt = ChatPromptTemplate.from_template(
