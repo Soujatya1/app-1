@@ -18,9 +18,11 @@ st.markdown("""
     .input-box {
         position: fixed;
         bottom: 0;
+        left: 0;
         width: 100%;
         background-color: white;
         padding: 10px;
+        box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
         z-index: 999;
     }
     .conversation-history {
