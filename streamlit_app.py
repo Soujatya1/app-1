@@ -3,7 +3,6 @@ from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFDirectoryLoader
@@ -41,6 +40,7 @@ if uploaded_files:
         st.session_state.loader = PyPDFDirectoryLoader("uploaded_files")
         st.session_state.docs = st.session_state.loader.load()
         st.write(f"Loaded {len(st.session_state.docs)} documents.")
+
 
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
@@ -193,8 +193,10 @@ st.write("Ask your question below:")
 # Text input for the user to enter the question at the bottom
 prompt1 = st.text_input("Enter your question here.....")
 
-# Dropdown for language selection
-selected_language = st.selectbox("Select language for translation:", language_options)
+# Sidebar for language selection
+with st.sidebar:
+    st.header("Language Selection")
+    selected_language = st.selectbox("Select language for translation:", language_options)
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
