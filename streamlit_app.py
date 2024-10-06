@@ -22,7 +22,7 @@ if 'history' not in st.session_state:
 
 # Initialize flowmessages if not present
 if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [SystemMessage(content="You are a Knowledge Management Expert Assisstant who dervies answers from given documents and responds as per. Do not give any information except for the ones in the uploaded documents")]
+    st.session_state['flowmessages'] = [SystemMessage(content="You are a comedian AI assistant")]
 
 # Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
@@ -60,11 +60,15 @@ def vector_embedding():
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-# Function to form context from the last 10 interactions
-def get_last_context():
+# Function to form context from the last 10 interactions only if relevant
+def get_last_context(question):
+    last_context = ""
     history = st.session_state.history[-10:]  # Take the last 10 interactions
-    context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
-    return context
+    for h in history:
+        # If the new question is related to the previous one (heuristically)
+        if question in h['question'] or h['question'] in question:
+            last_context += f"Q: {h['question']}\nA: {h['answer']}\n"
+    return last_context
 
 # Function to get AI response and update the flowmessages
 def get_chatmodel_response(question):
@@ -100,9 +104,9 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Retrieve last 10 interactions to form the context
-    context = get_last_context()
-
+    # Retrieve context based on whether the new question relates to past history
+    context = get_last_context(prompt1)
+    
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
@@ -111,7 +115,7 @@ if prompt1 and "vectors" in st.session_state:
     # Measure the time to get a response
     start = time.process_time()
     
-    # Get AI response with conversation context
+    # Get AI response with dynamic context
     answer = get_chatmodel_response(prompt1)  # Use this function to get the AI response
     
     # Display the response time
