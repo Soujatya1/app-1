@@ -2,19 +2,15 @@ import streamlit as st
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
 from langchain.vectorstores import FAISS
 from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.prompts import ChatPromptTemplate
 from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import time
 
 st.title("Knowledge Management Chatbot")
-
-if not os.path.exists("uploaded_files"):
-    os.makedirs("uploaded_files")
 
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
@@ -22,7 +18,11 @@ if 'history' not in st.session_state:
 
 # Initialize flowmessages if not present
 if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [SystemMessage(content="You are a Knowledge Management Specialist who answers questions based on uploaded documents")]
+    st.session_state['flowmessages'] = [SystemMessage(content="You are a document-based AI assistant")]
+
+if not os.path.exists("uploaded_files"):
+    os.makedirs("uploaded_files")
+
 
 # Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
@@ -37,12 +37,12 @@ if uploaded_files:
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
 # Initialize LLM model
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192", temperature = 0.2)
+llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
 prompt = ChatPromptTemplate.from_template(
 """
-Use the following context for answering the question:
+Use the following context from the uploaded documents for answering the question:
 <context>
 {context}
 </context>
@@ -70,19 +70,19 @@ def get_last_context(question):
             last_context += f"Q: {h['question']}\nA: {h['answer']}\n"
     return last_context
 
-# Function to get AI response and update the flowmessages
-def get_chatmodel_response(question):
-    st.session_state['flowmessages'].append(HumanMessage(content=question))
-
-    # Call the chat model with the flowmessages
-    answer = llm(st.session_state['flowmessages'])
-
-    # Extract the answer content from the response object
-    answer_content = answer['generation']['content'] if 'generation' in answer else answer.content
-
-    # Append AI response to the flowmessages and return the answer content
-    st.session_state['flowmessages'].append(AIMessage(content=answer_content))
-    return answer_content
+# Function to get AI response based strictly on documents
+def get_chatmodel_response_from_docs(question, context):
+    # Retrieve the relevant document context from the vector store
+    retriever = st.session_state.vectors.as_retriever()
+    
+    # Create the document retrieval chain using the prompt
+    document_chain = create_retrieval_chain(retriever=retriever, chain_type="stuff", question_prompt=prompt, llm=llm)
+    
+    # Use the retrieval chain to get a response based on the document context
+    response = document_chain({'input': question, 'context': context})
+    
+    # Ensure that the response is strictly from the document
+    return response['answer']
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -107,19 +107,14 @@ if prompt1 and "vectors" in st.session_state:
     # Retrieve context based on whether the new question relates to past history
     context = get_last_context(prompt1)
     
-    # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
-    retriever = st.session_state.vectors.as_retriever()
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
-    
     # Measure the time to get a response
     start = time.process_time()
     
-    # Get AI response with dynamic context
-    answer = get_chatmodel_response(prompt1)  # Use this function to get the AI response
+    # Get the answer strictly from the documents
+    answer = get_chatmodel_response_from_docs(prompt1, context)
     
     # Display the response time
-    st.write("Response time :", time.process_time() - start)
+    st.write("Response time:", time.process_time() - start)
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
@@ -127,10 +122,11 @@ if prompt1 and "vectors" in st.session_state:
     # Display the current answer
     st.write(answer)
     
-    # Document similarity search
+    # With a Streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        # Retrieve the relevant documents for the input question and context
-        response = retrieval_chain.invoke({'input': prompt1, 'context': context})
-        for i, doc in enumerate(response["context"]):
+        # Retrieve the relevant documents based on similarity
+        response = st.session_state.vectors.similarity_search_with_score(prompt1)
+        for i, (doc, score) in enumerate(response):
+            st.write(f"Document {i + 1} (Score: {score}):")
             st.write(doc.page_content)
             st.write("--------------------------------")
