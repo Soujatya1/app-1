@@ -7,6 +7,15 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
+from langchain.chains import ConversationChain
+from langchain.chains.conversation.memory import ConversationBufferWindowMemory
+from streamlit_chat import message
+from langchain.prompts import (
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+    ChatPromptTemplate,
+    MessagesPlaceholder
+)
 
 # App Title
 st.title("Knowledge Management Chatbot")
@@ -14,6 +23,55 @@ st.title("Knowledge Management Chatbot")
 # Initialize session state to store chat history if not already initialized
 if 'chat_history' not in st.session_state:
     st.session_state['chat_history'] = []
+
+if 'response' not in st.session_state:
+    st.session_state['response'] = []
+
+if 'user_question' not in st.session_state:
+    st.session_state['chat_history'] = []
+
+if 'buffer_memory' not in st.session_state:
+    st.session_state.buffer_memory=ConversationBufferWindowMemory(k=10,return_messages=True)
+
+llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
+
+system_msg_template = SystemMessagePromptTemplate.from_template(template = """
+You are a Knowledge Management specialist. Answer the following questions based only on the provided context, previous responses, and the uploaded documents.""")
+
+human_msg_template = HumanMessagePromptTemplate.from_template(template="{input}")
+
+prompt_template = ChatPromptTemplate.from_messages([system_msg_template, MessagesPlaceholder(variable_name="history"), human_msg_template])
+
+conversation = ConversationChain(memory=st.session_state.buffer_memory, prompt=prompt_template, llm=llm, verbose=True)
+
+response_container = st.container()
+
+textcontainer = st.container()
+
+with textcontainer:
+    query = st.text_input("Query: ", key="input")
+    if query:
+        with st.spinner("typing..."):
+            conversation_string = get_conversation_string()
+            # st.code(conversation_string)
+            refined_query = query_refiner(conversation_string, query)
+            st.subheader("Refined Query:")
+            st.write(refined_query)
+            context = find_match(refined_query)
+            # print(context)  
+            response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{query}")
+        st.session_state.requests.append(query)
+        st.session_state.responses.append(response) 
+with response_container:
+    if st.session_state['responses']:
+
+        for i in range(len(st.session_state['responses'])):
+            message(st.session_state['responses'][i],key=str(i))
+            if i < len(st.session_state['requests']):
+                message(st.session_state["requests"][i], is_user=True,key=str(i)+ '_user')
+
+
+
 
 # Custom CSS for styling chat messages and positioning the input box
 st.markdown("""
@@ -82,6 +140,14 @@ if uploaded_files:
 
     # Vector database storage for all documents
     vector_db = FAISS.from_documents(all_documents, hf_embedding)
+
+    def get_similiar_docs(query,k=1,score=False):
+      if score:
+        similar_docs = index.similarity_search_with_score(query,k=k)
+      else:
+        similar_docs = index.similarity_search(query,k=k)
+      return similar_docs
+
 
     # Craft ChatPrompt Template
     prompt_template = ChatPromptTemplate.from_template("""
