@@ -85,14 +85,8 @@ if uploaded_files:
 
     # Craft ChatPrompt Template
     prompt_template = ChatPromptTemplate.from_template("""
-    You are a Knowledge Management specialist. Also, wherever possible understand and return the source name of the document from where the information has been pulled.
-    Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-
-    - Think step by step before providing a detailed answer.
-    - Answer in a point-wise format when requested.
-    - If the user asks for tabular format, try to present information in a table-like structure.
-    - Always refer to the conversation history when applicable.
-
+    You are a Knowledge Management specialist. Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
+    
     <context>
     {context}
     </context>
@@ -134,7 +128,7 @@ if uploaded_files:
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
             "input": user_question,
-            "context": context
+            "context": context  # Include the constructed context
         })
         
         if response:
