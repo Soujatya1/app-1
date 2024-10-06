@@ -80,6 +80,20 @@ if st.button("Embed Docs"):
 
 # Check if the user entered a question and if documents are embedded
 if prompt1 and "vectors" in st.session_state:
+    # Check for context switching based on the last question and answer
+    if st.session_state.history:
+        last_question = st.session_state.history[-1]["question"]
+        last_answer = st.session_state.history[-1]["answer"]
+
+        # If the new question is likely a follow-up (you can customize this logic)
+        if prompt1.lower().startswith(("elaborate", "what about", "tell me more", "can you expand")) or prompt1.strip() == "":
+            # Modify the input to ask for elaboration on the last answer
+            prompt1 = f"Please elaborate on the following: {last_answer}"  # or format as needed
+        else:
+            # Clear previous context if the new question is unrelated
+            if prompt1.strip() != last_question.strip():
+                st.session_state.history.clear()  # Reset context
+
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
@@ -96,16 +110,6 @@ if prompt1 and "vectors" in st.session_state:
     # Update the interaction history
     st.session_state.history.append({"question": prompt1, "answer": answer})
     limit_history()  # Limit to the last 5 interactions
-
-    # Determine if context switching is needed
-    if len(st.session_state.history) > 1:
-        last_question = st.session_state.history[-2]["question"]
-        # Simple logic to determine relevance (can be improved based on use case)
-        if last_question and not prompt1.lower().startswith(last_question.lower()):  # Assuming non-relevance if question does not relate
-            # Clear the history for a fresh context
-            st.session_state.history.clear()
-            st.session_state.history.append({"question": prompt1, "answer": answer})
-            st.write("Context switched to new question.")
 
     # Display the current answer
     st.write(answer)
