@@ -78,7 +78,7 @@ def get_chatmodel_response(question):
     # Call the model with the prompt as a string
     response = llm.invoke(prompt)  # The input is now a string created from the prompt template
 
-    answer = response['answer']
+    answer = response.content
     st.session_state['flowmessages'].append(AIMessage(content=answer))
     return answer
 
