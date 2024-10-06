@@ -70,10 +70,12 @@ def get_chatmodel_response(question):
 
     # Combine the previous context and the new question for the model
     context = get_last_context()
-    response = llm.invoke({
-        'input': question,
-        'context': context
-    })
+    
+    # Create a prompt that combines the context and question
+    combined_prompt = f"Use the following context for answering the question:\n\n<context>\n{context}\n</context>\nQuestions: {question}"
+
+    # Call the model with the combined prompt
+    response = llm.invoke({'input': combined_prompt})  # Adjusted to use a string.
 
     answer = response['answer']
     st.session_state['flowmessages'].append(AIMessage(content=answer))
