@@ -105,7 +105,7 @@ def get_chatmodel_response(question):
         answer = response['answer']  # Access the answer
     else:
         answer = "I'm sorry, I couldn't generate a valid response."
-
+    
     # Append user message to flowmessages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
     st.session_state['flowmessages'].append(AIMessage(content=answer))  # Ensure AIMessage is correctly instantiated
@@ -125,6 +125,6 @@ if prompt1 and "vectors" in st.session_state:
     
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response.get("context", [])):
+        for doc in st.session_state.vectors.similarity_search(prompt1):  # Use the appropriate retrieval method
             st.write(doc.page_content)
             st.write("--------------------------------")
