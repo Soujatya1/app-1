@@ -66,7 +66,7 @@ def get_last_context():
 
 # Function to get the chat model response
 def get_chatmodel_response(question):
-    # Add the user's question to the flow messages
+    # Append the user's question to the flow messages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
 
     # Retrieve the last context from the session state
@@ -76,9 +76,22 @@ def get_chatmodel_response(question):
     prompt = chat_prompt.format(context=context, input=question)
 
     # Call the model with the prompt as a string
-    response = llm.invoke(prompt)  # The input is now a string created from the prompt template
+    try:
+        response = llm.invoke(prompt)  # Adjusted to pass a string directly
+        
+        # Print the entire response for debugging
+        st.write("Model Response:", response)
 
-    answer = response.content
+        # Check if the response is valid and has the 'content' attribute
+        if hasattr(response, 'content'):
+            answer = response.content  # Access the content attribute
+        else:
+            answer = "Sorry, I didn't get a valid response from the model."
+
+    except Exception as e:
+        answer = f"An error occurred: {str(e)}"
+
+    # Append the AI's response to the flow messages
     st.session_state['flowmessages'].append(AIMessage(content=answer))
     return answer
 
