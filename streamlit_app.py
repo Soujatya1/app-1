@@ -125,12 +125,17 @@ if prompt1 and "vectors" in st.session_state:
     # With a Streamlit expander to show the document similarity search results
     # With a Streamlit expander to show the document similarity search results
     # With a Streamlit expander to show the document similarity search results
+    # With a Streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
         for i, doc in enumerate(relevant_docs):
-        # Check if the doc is an object with page_content
+        # Debugging to understand the structure of `doc`
+            st.write(f"Document {i} type: {type(doc)}")  # To check if it's a string or Document object
             if hasattr(doc, 'page_content'):
                 st.write(doc.page_content)  # Document object case
-            else:
+            elif isinstance(doc, str):
                 st.write(doc)  # String case, if doc is not a Document object
+            else:
+                st.write("Unexpected document structure. Here's the document:")
+                st.write(doc)  # Fallback for unhandled cases
             st.write("--------------------------------")
 
