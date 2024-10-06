@@ -40,16 +40,20 @@ if uploaded_files:
         st.session_state.loader = PyPDFDirectoryLoader("uploaded_files")
         st.session_state.docs = st.session_state.loader.load()
         st.write(f"Loaded {len(st.session_state.docs)} documents.")
+        
+        # Debugging: Print document metadata to check if source names are available
+        for doc in st.session_state.docs:
+            st.write(f"Document metadata: {doc.metadata}")  # This should show the filename
+
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
 # Initialize LLM model
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
+llm = ChatGroq(groq_api_key="your_api_key", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template with dynamic context
 def create_prompt(input_text):
-    # Join the last interactions to give more context
     previous_interactions = "\n".join(
         [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]  # Last 5 interactions
     )
@@ -107,9 +111,10 @@ if prompt1 and "vectors" in st.session_state:
     
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response.get("context", [])):
-            # Assuming doc contains a 'metadata' field with the filename
-            doc_name = doc.metadata.get("source", "Unknown Document")
-            st.write(f"Document: {doc_name}")
-            st.write(doc.page_content)
-            st.write("--------------------------------")
+        if "context" in response:
+            for i, doc in enumerate(response["context"]):
+                # Assuming doc contains a 'metadata' field with the filename
+                doc_name = doc.metadata.get("source", "Unknown Document")
+                st.write(f"Document: {doc_name}")  # Display the document name
+                st.write(doc.page_content)
+                st.write("--------------------------------")
