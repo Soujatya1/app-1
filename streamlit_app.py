@@ -45,6 +45,7 @@ def vector_embedding():
         st.session_state.embeddings=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
         st.session_state.loader=PyPDFDirectoryLoader("uploaded_file.name")
         st.session_state.docs=st.session_state.loader.load()
+        st.write(f"Loaded {len(st.session_state.docs)} documents.")
         st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=500,chunk_overlap=100)
         st.session_state.final_documents=st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors=FAISS.from_documents(st.session_state.final_documents,st.session_state.embeddings)
