@@ -123,10 +123,8 @@ if prompt1 and "vectors" in st.session_state:
     st.write(answer)
     
     # With a Streamlit expander to show the document similarity search results
+    # With a Streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        # Retrieve the relevant documents based on similarity
-        response = st.session_state.vectors.similarity_search_with_score(prompt1)
-        for i, (doc, score) in enumerate(response):
-            st.write(f"Document {i + 1} (Score: {score}):")
-            st.write(doc.page_content)
+        for i, doc in enumerate(relevant_docs):
+            st.write(doc.page_content if hasattr(doc, 'page_content') else doc)
             st.write("--------------------------------")
