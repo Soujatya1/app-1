@@ -119,7 +119,10 @@ if uploaded_files:
 
     if user_question:
         # Prepare the context from the chat history
-        context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
+        context = ""
+        if st.session_state['chat_history']:
+            # Add all previous user-bot pairs to the context
+            context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
         
         # Add the current user question to the context
         context += f"\nUser: {user_question}\n"
@@ -130,10 +133,10 @@ if uploaded_files:
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
             "input": user_question,
-            "context": context  # Include the constructed context
+            "context": context.strip()  # Include the constructed context, stripped of leading/trailing whitespace
         })
         
-        if response:
+        if response and 'answer' in response:
             bot_answer = response['answer']
             
             # Update chat history
