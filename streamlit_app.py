@@ -84,13 +84,19 @@ if prompt1 and "vectors" in st.session_state:
     context = ""
     for interaction in st.session_state.history[-5:]:  # Get last 5 interactions
         context += f"You: {interaction['question']}\nBot: {interaction['answer']}\n"
-    
-    # Use the context to determine if the new question is related to the previous answer
-    is_follow_up = any(prompt1.lower() in follow_up for follow_up in ["elaborate", "tell me more", "can you expand", "in summary", "list points", "give me details"])
+
+    # Determine if the current question refers to the previous answer (more advanced understanding)
+    is_follow_up = len(st.session_state.history) > 0 and (
+        prompt1.lower() in ["elaborate", "put in form of pointers", "tell me more", "expand on that", "explain further"] or
+        ("elaborate" in prompt1.lower()) or 
+        ("more" in prompt1.lower()) or 
+        ("explain" in prompt1.lower())
+    )
 
     # Prepare the input based on whether it's a follow-up
     if is_follow_up:
-        prompt_input = f"Please elaborate on the previous answer: {st.session_state.history[-1]['answer']}"
+        previous_answer = st.session_state.history[-1]['answer']
+        prompt_input = f"Please elaborate on the previous answer: {previous_answer}.\n\nNew Question: {prompt1}"
     else:
         prompt_input = prompt1
 
