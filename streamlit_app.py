@@ -100,12 +100,15 @@ def get_chatmodel_response(question):
     
     st.write("Response time :", time.process_time() - start)
     
-    # Extract the answer from the response
-    answer = response['answer']  # Assuming this is how the answer is accessed in your API
-    
+    # Check if the response contains an answer key
+    if isinstance(response, dict) and 'answer' in response:
+        answer = response['answer']  # Access the answer
+    else:
+        answer = "I'm sorry, I couldn't generate a valid response."
+
     # Append user message to flowmessages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
-    st.session_state['flowmessages'].append(AIMessage(content=answer))  # Change here
+    st.session_state['flowmessages'].append(AIMessage(content=answer))  # Ensure AIMessage is correctly instantiated
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": question, "answer": answer})
