@@ -39,7 +39,7 @@ prompt = ChatPromptTemplate.from_template(
 Answer the questions based on the provided context only.
 Please provide the most accurate response based on the question.
 Always extract the full information pertaining to user query.
-Also state the source document name for the context and response.
+Wherever possible, read the name of the source document from where the context and response has been pulled as per user input.
 <context>
 {context}
 <context>
