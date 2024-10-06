@@ -16,6 +16,12 @@ st.title("Knowledge Management Chatbot")
 if 'history' not in st.session_state:
     st.session_state.history = []
 
+# Initialize the flow messages if not present
+if 'flowmessages' not in st.session_state:
+    st.session_state['flowmessages'] = [
+        SystemMessage(content="You are a Knowledge Management Specialist who answers questions based on the documents uploaded")
+    ]
+
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -51,11 +57,26 @@ def vector_embedding():
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-# Function to form context from the last 10 interactions
+# Function to get the last context from history
 def get_last_context():
     history = st.session_state.history[-10:]  # Take the last 10 interactions
     context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
     return context
+
+# Function to get the chat model response
+def get_chatmodel_response(question):
+    st.session_state['flowmessages'].append(HumanMessage(content=question))
+
+    # Combine the previous context and the new question for the model
+    context = get_last_context()
+    response = llm.invoke({
+        'input': question,
+        'context': context
+    })
+
+    answer = response['answer']
+    st.session_state['flowmessages'].append(AIMessage(content=answer))
+    return answer
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -69,7 +90,7 @@ st.write("---")
 st.write("Ask your question below:")
 
 # Text input for the user to enter the question at the bottom
-prompt1 = st.text_input("Enter your question here.....")
+prompt1 = st.text_input("Enter your question here...")
 
 # Button to embed documents
 if st.button("Embed Docs"):
@@ -87,11 +108,11 @@ if prompt1 and "vectors" in st.session_state:
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
-    st.write("Response time :", time.process_time() - start)
     
-    # Extract the answer from the response
-    answer = response['answer']
+    # Get the chat model response
+    answer = get_chatmodel_response(prompt1)
+    
+    st.write("Response time :", time.process_time() - start)
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
