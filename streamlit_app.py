@@ -13,6 +13,9 @@ import time
 
 st.title("Knowledge Management Chatbot")
 
+if not os.path.exists("uploaded_files"):
+    os.makedirs("uploaded_files")
+
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
