@@ -92,7 +92,7 @@ def get_chatmodel_response(question):
     # Prepare the context
     context = get_last_context()
     
-    # Create input data for the retrieval chain
+    # Create input data for the prompt
     input_data = {
         'input': question,         # User's new question
         'history': context        # Past interactions as context
