@@ -37,7 +37,8 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question
+Please provide the most accurate response based on the question.
+Also state the source document name for the context and response.
 <context>
 {context}
 <context>
