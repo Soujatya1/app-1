@@ -119,4 +119,4 @@ if prompt1 and "vectors" in st.session_state:
     with st.expander("Document Similarity Search"):
         for doc in response.get("context", []):
             st.write(doc.page_content)
-            st.write("--------------------------
+            st.write("--------------------------")
