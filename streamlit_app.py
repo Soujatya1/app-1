@@ -114,31 +114,27 @@ if st.button("Embed Docs"):
     vector_embedding()
 
 # If a question is entered and documents are embedded
+# If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Retrieve last 10 interactions to form the context
     context = get_last_context()
-    
+
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, chat_prompt)
+    document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
     # Measure the time to get a response
     start = time.process_time()
     
-    # Get the chat model response
-    answer = get_chatmodel_response(prompt1)
-    
-    st.write("Response time :", time.process_time() - start)
-    
-    # Append the interaction to the session state history
-    st.session_state.history.append({"question": prompt1, "answer": answer})
+    # Call your function to get the AI response
+    answer = get_chatmodel_response(prompt1)  # Store the answer here
     
     # Display the current answer
     st.write(answer)
     
-    # With a streamlit expander to show the document similarity search results
+    # Add the below line to process the response
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response["context"]):
+        for doc in retrieval_chain.invoke({'input': prompt1, 'context': context})["context"]:
             st.write(doc.page_content)
             st.write("--------------------------------")
