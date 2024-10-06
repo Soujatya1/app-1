@@ -14,10 +14,14 @@ st.title("Knowledge Management Chatbot")
 
 if not os.path.exists("uploaded_files"):
     os.makedirs("uploaded_files")
-    
+
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
+    
+# Keep a context of the last question and answer for dynamic prompts
+if 'last_context' not in st.session_state:
+    st.session_state.last_context = ""
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -43,17 +47,19 @@ if uploaded_files:
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-# Chat Prompt Template
-prompt = ChatPromptTemplate.from_template(
-"""
-Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question
-<context>
-{context}
-<context>
-Questions:{input}
-"""
-)
+# Chat Prompt Template with dynamic context
+def create_prompt(input_text):
+    return ChatPromptTemplate.from_template(
+        f"""
+        Answer the questions based on the provided context only.
+        Please provide the most accurate response based on the question.
+        Previous Context: {st.session_state.last_context}
+        <context>
+        {{context}}
+        <context>
+        Questions: {input_text}
+        """
+    )
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -72,7 +78,7 @@ prompt1 = st.text_input("Enter your question here.....")
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, prompt)
+    document_chain = create_stuff_documents_chain(llm, create_prompt(prompt1))
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
@@ -83,6 +89,9 @@ if prompt1 and "vectors" in st.session_state:
     
     # Extract the answer from the response
     answer = response['answer']
+    
+    # Update the last context with the new answer
+    st.session_state.last_context = answer
     
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
