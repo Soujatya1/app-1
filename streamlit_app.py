@@ -12,9 +12,6 @@ import time
 
 st.title("Knowledge Management Chatbot")
 
-if not os.path.exists("uploaded_files"):
-    os.makedirs("uploaded_files")
-    
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -36,14 +33,11 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 # Chat Prompt Template
 prompt = ChatPromptTemplate.from_template(
 """
-Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question.
-Always extract the full information pertaining to user query.
-Wherever possible, read the name of the source document from where the context and response has been pulled as per user input.
+Use the following context for answering the question:
 <context>
 {context}
-<context>
-Questions:{input}
+</context>
+Questions: {input}
 """
 )
 
@@ -56,6 +50,12 @@ def vector_embedding():
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
+
+# Function to form context from the last 10 interactions
+def get_last_context():
+    history = st.session_state.history[-10:]  # Take the last 10 interactions
+    context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
+    return context
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -77,6 +77,9 @@ if st.button("Embed Docs"):
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
+    # Retrieve last 10 interactions to form the context
+    context = get_last_context()
+    
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
@@ -84,7 +87,7 @@ if prompt1 and "vectors" in st.session_state:
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1})
+    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
