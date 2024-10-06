@@ -19,7 +19,7 @@ if 'chat_history' not in st.session_state:
 st.markdown("""
     <style>
     .chat-container {
-        height: calc(100vh - 100px); /* Set height of the chat area, adjusting for input box */
+        height: calc(100vh - 150px); /* Set height of the chat area, adjusting for input box */
         overflow-y: auto; /* Enable vertical scrolling */
         padding: 10px;
         box-sizing: border-box; /* Include padding in height calculations */
@@ -128,8 +128,8 @@ if uploaded_files:
         context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
         
         # Limit the context to prevent exceeding token limits
-        if len(context.split()) > 2048:  # Adjust this based on your LLM's token limit
-            context = " ".join(context.split()[-2048:])  # Keep only the last 2048 words
+        context = context.split()[-2048:]  # Keep the last 2048 words, adjust as necessary
+        context = " ".join(context)
 
         # Get response from the retrieval chain with context
         response = retrieval_chain.invoke({
