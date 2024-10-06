@@ -10,6 +10,8 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
 
+st.title("Knowledge Management Chatbot")
+
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
@@ -24,8 +26,6 @@ if uploaded_files:
             f.write(uploaded_file.getbuffer())
         
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
-
-st.title("Knowledge Management Chatbot")
 
 # Initialize LLM model
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
