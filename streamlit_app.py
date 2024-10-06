@@ -36,11 +36,11 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question
+Please provide the most accurate response based on the question.
 <context>
 {context}
 <context>
-Questions:{input}
+Questions: {input}
 """
 )
 
@@ -75,13 +75,23 @@ if st.button("Embed Docs"):
 def is_referring_to_previous(input_text):
     """Check if the user input is likely referring to the previous interaction."""
     # A simple check: if the input is too short (e.g., < 5 words), assume it's a vague instruction
-    return len(input_text.split()) < 3
+    return len(input_text.split()) < 5
+
+def construct_conversation_context():
+    """Construct the conversation context from the last 10 interactions."""
+    context = ""
+    for interaction in st.session_state.history[-10:]:
+        context += f"User: {interaction['question']}\nBot: {interaction['answer']}\n"
+    return context
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Check if the user is referring to the last response
     if is_referring_to_previous(prompt1):
+        context = construct_conversation_context()
         prompt1 = f"{prompt1}. Based on the previous answer: {st.session_state.last_response}"
+    else:
+        context = construct_conversation_context()
     
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
@@ -90,7 +100,7 @@ if prompt1 and "vectors" in st.session_state:
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1})
+    response = retrieval_chain.invoke({'context': context, 'input': prompt1})
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
