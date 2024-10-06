@@ -77,20 +77,14 @@ prompt1 = st.text_input("Enter your question here.....")
 
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Check if the prompt is a follow-up
-    if "explain" in prompt1.lower() or "more" in prompt1.lower():
-        input_text = f"Explain more on this: {st.session_state.last_context}"
-    else:
-        input_text = prompt1
-
     # Create chains for document retrieval and question answering
-    document_chain = create_stuff_documents_chain(llm, create_prompt(input_text))
+    document_chain = create_stuff_documents_chain(llm, create_prompt(prompt1))
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': input_text})
+    response = retrieval_chain.invoke({'input': prompt1})
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
