@@ -42,10 +42,6 @@ if uploaded_files:
         st.session_state.docs = st.session_state.loader.load()
         st.write(f"Loaded {len(st.session_state.docs)} documents.")
 
-        # Debugging: Print document metadata to check if source names are available
-        for doc in st.session_state.docs:
-            st.write(f"Document metadata: {doc.metadata}")  # This should show the filename
-
         st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
