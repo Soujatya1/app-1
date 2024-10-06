@@ -80,19 +80,19 @@ if st.button("Embed Docs"):
 
 # Check if the user entered a question and if documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Check for context switching based on the last question and answer
-    if st.session_state.history:
-        last_question = st.session_state.history[-1]["question"]
-        last_answer = st.session_state.history[-1]["answer"]
+    # Create a context string that combines the last few interactions
+    context = ""
+    for interaction in st.session_state.history[-5:]:  # Get last 5 interactions
+        context += f"You: {interaction['question']}\nBot: {interaction['answer']}\n"
+    
+    # Use the context to determine if the new question is related to the previous answer
+    is_follow_up = any(prompt1.lower() in follow_up for follow_up in ["elaborate", "tell me more", "can you expand", "in summary", "list points", "give me details"])
 
-        # If the new question is likely a follow-up (you can customize this logic)
-        if prompt1.lower().startswith(("elaborate", "what about", "tell me more", "can you expand")) or prompt1.strip() == "":
-            # Modify the input to ask for elaboration on the last answer
-            prompt1 = f"Please elaborate on the following: {last_answer}"  # or format as needed
-        else:
-            # Clear previous context if the new question is unrelated
-            if prompt1.strip() != last_question.strip():
-                st.session_state.history.clear()  # Reset context
+    # Prepare the input based on whether it's a follow-up
+    if is_follow_up:
+        prompt_input = f"Please elaborate on the previous answer: {st.session_state.history[-1]['answer']}"
+    else:
+        prompt_input = prompt1
 
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
@@ -101,7 +101,7 @@ if prompt1 and "vectors" in st.session_state:
 
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1})
+    response = retrieval_chain.invoke({'input': prompt_input, 'context': context})
     st.write("Response time:", time.process_time() - start)
 
     # Extract the answer from the response
