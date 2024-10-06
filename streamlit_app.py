@@ -1,114 +1,13 @@
 import streamlit as st
-from langchain_community.document_loaders import PyPDFLoader
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import FAISS
-from langchain_core.prompts import ChatPromptTemplate
-from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain.chains import create_retrieval_chain
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.chains import ConversationChain
-from langchain.chains.conversation.memory import ConversationBufferWindowMemory
-from streamlit_chat import message
-from langchain.prompts import (
-    SystemMessagePromptTemplate,
-    HumanMessagePromptTemplate,
-    ChatPromptTemplate,
-    MessagesPlaceholder
-)
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 
-# App Title
-st.title("Knowledge Management Chatbot")
-
-# Initialize session state to store chat history if not already initialized
-if 'chat_history' not in st.session_state:
-    st.session_state['chat_history'] = []
-
-if 'response' not in st.session_state:
-    st.session_state['response'] = []
-
-if 'user_question' not in st.session_state:
-    st.session_state['chat_history'] = []
-
-if 'buffer_memory' not in st.session_state:
-    st.session_state.buffer_memory=ConversationBufferWindowMemory(k=10,return_messages=True)
-
-llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
-
-system_msg_template = SystemMessagePromptTemplate.from_template(template = """
-You are a Knowledge Management specialist. Answer the following questions based only on the provided context, previous responses, and the uploaded documents.""")
-
-human_msg_template = HumanMessagePromptTemplate.from_template(template="{input}")
-
-prompt_template = ChatPromptTemplate.from_messages([system_msg_template, MessagesPlaceholder(variable_name="history"), human_msg_template])
-
-conversation = ConversationChain(memory=st.session_state.buffer_memory, prompt=prompt_template, llm=llm, verbose=True)
-
-response_container = st.container()
-
-textcontainer = st.container()
-
-with textcontainer:
-    query = st.text_input("Query: ", key="input")
-    if query:
-        with st.spinner("typing..."):
-            conversation_string = get_conversation_string()
-            # st.code(conversation_string)
-            refined_query = query_refiner(conversation_string, query)
-            st.subheader("Refined Query:")
-            st.write(refined_query)
-            context = find_match(refined_query)
-            # print(context)  
-            response = conversation.predict(input=f"Context:\n {context} \n\n Query:\n{query}")
-        st.session_state.requests.append(query)
-        st.session_state.responses.append(response) 
-with response_container:
-    if st.session_state['responses']:
-
-        for i in range(len(st.session_state['responses'])):
-            message(st.session_state['responses'][i],key=str(i))
-            if i < len(st.session_state['requests']):
-                message(st.session_state["requests"][i], is_user=True,key=str(i)+ '_user')
-
-
-
-
-# Custom CSS for styling chat messages and positioning the input box
-st.markdown("""
-    <style>
-    .chat-container {
-        height: calc(100vh - 150px); /* Set height of the chat area, adjusting for input box */
-        overflow-y: auto; /* Enable vertical scrolling */
-        padding: 10px;
-        box-sizing: border-box; /* Include padding in height calculations */
-    }
-    .user-message {
-        background-color: #e0f7fa;
-        border-left: 5px solid #00796b;
-        padding: 10px;
-        margin: 5px 0;
-    }
-    .bot-message {
-        background-color: #ffe0b2;
-        border-left: 5px solid #f57c00;
-        padding: 10px;
-        margin: 5px 0;
-    }
-    .input-box {
-        position: fixed; /* Fix the input box at the bottom */
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        padding: 10px;
-        background-color: #ffffff;
-        border-top: 1px solid #ddd;
-        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 1000; /* Ensure it is above other elements */
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-# Upload file
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -123,101 +22,55 @@ if uploaded_files:
         # Success message
         st.success(f"File '{uploaded_file.name}' uploaded successfully!")
 
-        # Load the PDF
-        loader = PyPDFLoader(uploaded_file.name)
-        docs = loader.load()
+st.title("Knowledge Management Chatbot")
 
-        # Text Splitting into chunks
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=15)
-        documents = text_splitter.split_documents(docs)
+llm=ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-        # Append the documents from the current file to the list
-        all_documents.extend(documents)
+prompt=ChatPromptTemplate.from_template(
+"""
+Answer the questions based on the provided context only.
+Please provide the most accurate response based on the question
+<context>
+{context}
+<context>
+Questions:{input}
 
-    # Initialize embeddings and LLM
-    hf_embedding = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-    llm = ChatGroq(groq_api_key="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", model_name='llama3-70b-8192', temperature=0, top_p=0.2)
+"""
+)
 
-    # Vector database storage for all documents
-    vector_db = FAISS.from_documents(all_documents, hf_embedding)
+def vector_embedding():
 
-    def get_similiar_docs(query,k=1,score=False):
-      if score:
-        similar_docs = index.similarity_search_with_score(query,k=k)
-      else:
-        similar_docs = index.similarity_search(query,k=k)
-      return similar_docs
+    if "vectors" not in st.session_state:
+
+        st.session_state.embeddings=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        st.session_state.loader=PyPDFDirectoryLoader("uploaded_file.name")
+        st.session_state.docs=st.session_state.loader.load()
+        st.session_state.text_splitter=RecursiveCharacterTextSplitter(chunk_size=1000,chunk_overlap=200)
+        st.session_state.final_documents=st.session_state.text_splitter.split_documents(st.session_state.docs)
+        st.session_state.vectors=FAISS.from_documents(st.session_state.final_documents,st.session_state.embeddings)
+
+prompt1=st.text_input("Enter your question here.....")
 
 
-    # Craft ChatPrompt Template
-    prompt_template = ChatPromptTemplate.from_template("""
-    You are a Knowledge Management specialist. Answer the following questions based only on the provided context, previous responses, and the uploaded documents.
-    
-    <context>
-    {context}
-    </context>
+if st.button("Documents Embedding"):
+    vector_embedding()
 
-    Question: {input}
-    """)
+import time
 
-    # Stuff Document Chain Creation
-    document_chain = create_stuff_documents_chain(llm, prompt_template)
 
-    # Retriever from vector store
-    retriever = vector_db.as_retriever()
 
-    # Create a retrieval chain
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+if prompt1:
+    document_chain=create_stuff_documents_chain(llm,prompt)
+    retriever=st.session_state.vectors.as_retriever()
+    retrieval_chain=create_retrieval_chain(retriever,document_chain)
+    start=time.process_time()
+    response=retrieval_chain.invoke({'input':prompt1})
+    print("Response time :",time.process_time()-start)
+    st.write(response['answer'])
 
-    # Display the chat history in a scrollable container
-    st.write("### Chat History")
-    chat_container = st.container()
-
-    with chat_container:
-        for chat in st.session_state['chat_history']:
-            st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-            st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-
-    # Chat interface (fixed input box)
-    user_question = st.text_input("Ask a question about the relevant document", key="input", placeholder="Type your question here...", 
-                                   label_visibility="collapsed",  # Hide label for cleaner UI
-                                   help="Ask a question about the uploaded documents.")
-
-    if user_question:
-        # Prepare the context from the chat history
-        context = ""
-        if st.session_state['chat_history']:
-            # Add all previous user-bot pairs to the context
-            context = "\n".join([f"User: {chat['user']}\nBot: {chat['bot']}" for chat in st.session_state['chat_history']])
-        
-        # Add the current user question to the context
-        context += f"\nUser: {user_question}\n"
-
-        # Debugging: Print context to check if it includes previous messages
-        st.write("Debugging Context:", context)
-
-        # Get response from the retrieval chain with context
-        response = retrieval_chain.invoke({
-            "input": user_question,
-            "context": context.strip()  # Include the constructed context, stripped of leading/trailing whitespace
-        })
-        
-        if response and 'answer' in response:
-            bot_answer = response['answer']
-            
-            # Update chat history
-            st.session_state['chat_history'].append({
-                'user': user_question,
-                'bot': bot_answer
-            })
-            
-            # Clear the chat container before displaying updated history
-            chat_container.empty()
-            
-            with chat_container:
-                for chat in st.session_state['chat_history']:
-                    st.markdown(f"<div class='user-message'><strong>User:</strong> {chat['user']}</div>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='bot-message'><strong>Bot:</strong> {chat['bot']}</div>", unsafe_allow_html=True)
-
-# HTML for input box at the bottom
-st.markdown("<div class='input-box'></div>", unsafe_allow_html=True)
+    # With a streamlit expander
+    with st.expander("Document Similarity Search"):
+        # Find the relevant chunks
+        for i, doc in enumerate(response["context"]):
+            st.write(doc.page_content)
+            st.write("--------------------------------")
