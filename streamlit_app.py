@@ -38,7 +38,7 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
-prompt = ChatPromptTemplate.from_template(
+chat_prompt = ChatPromptTemplate.from_template(
 """
 Use the following context for answering the question:
 <context>
@@ -66,16 +66,17 @@ def get_last_context():
 
 # Function to get the chat model response
 def get_chatmodel_response(question):
+    # Add the user's question to the flow messages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
 
-    # Combine the previous context and the new question for the model
+    # Retrieve the last context from the session state
     context = get_last_context()
-    
-    # Create a prompt that combines the context and question
-    combined_prompt = f"Use the following context for answering the question:\n\n<context>\n{context}\n</context>\nQuestions: {question}"
 
-    # Call the model with the combined prompt
-    response = llm.invoke({'input': combined_prompt})  # Adjusted to use a string.
+    # Create the prompt using the ChatPromptTemplate
+    prompt = chat_prompt.format(context=context, input=question)
+
+    # Call the model with the prompt as a string
+    response = llm.invoke(prompt)  # The input is now a string created from the prompt template
 
     answer = response['answer']
     st.session_state['flowmessages'].append(AIMessage(content=answer))
