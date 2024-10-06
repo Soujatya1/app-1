@@ -22,7 +22,7 @@ if 'history' not in st.session_state:
 
 # Initialize flowmessages if not present
 if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [SystemMessage(content="You are a comedian AI assistant")]
+    st.session_state['flowmessages'] = [SystemMessage(content="You are a Knowledge Management Expert Assisstant who dervies answers from given documents and responds as per")]
 
 # Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
