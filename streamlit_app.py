@@ -36,7 +36,7 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
-prompt = ChatPromptTemplate.from_template(
+prompt_template = ChatPromptTemplate.from_template(
 """
 The following is a conversation history between a user and a bot.
 Use the context of the conversation history to respond to the user's question accurately.
@@ -89,20 +89,14 @@ def get_chatmodel_response(question):
     # Prepare the context
     context = get_last_context()
     
-    # Create input data for the prompt
-    input_data = {
-        'input': question,         # User's new question
-        'history': context        # Past interactions as context
-    }
-
+    # Create input for the prompt
+    prompt_input = prompt_template.format(history=context, input=question)
+    
     # Measure the time to get a response
     start = time.process_time()
     
-    # Invoke the prompt with the context and question
-    response = llm.invoke({
-        "history": input_data['history'],
-        "input": input_data['input']
-    })
+    # Call the model with the formatted prompt
+    response = llm.invoke(prompt_input)  # Pass the formatted string directly
     
     st.write("Response time :", time.process_time() - start)
     
