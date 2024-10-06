@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain.schema import HumanMessage, AIMessage  # Importing message classes
 import os
 import time
 
@@ -15,6 +16,10 @@ st.title("Knowledge Management Chatbot")
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
+
+# Initialize flowmessages if not present
+if 'flowmessages' not in st.session_state:
+    st.session_state['flowmessages'] = []
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -33,11 +38,15 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 # Chat Prompt Template
 prompt = ChatPromptTemplate.from_template(
 """
-Use the following context for answering the question:
-<context>
-{context}
-</context>
-Questions: {input}
+The following is a conversation history between a user and a bot.
+Use the context of the conversation history to respond to the user's question accurately.
+
+CONVERSATION HISTORY:
+{history}
+
+NEW QUESTION: {input}
+
+Please generate a relevant response based on the conversation.
 """
 )
 
@@ -54,7 +63,7 @@ def vector_embedding():
 # Function to form context from the last 10 interactions
 def get_last_context():
     history = st.session_state.history[-10:]  # Take the last 10 interactions
-    context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
+    context = "\n".join([f"User: {h['question']}\nBot: {h['answer']}" for h in history])
     return context
 
 # Display the conversation history at the top
@@ -75,10 +84,19 @@ prompt1 = st.text_input("Enter your question here.....")
 if st.button("Embed Docs"):
     vector_embedding()
 
-# If a question is entered and documents are embedded
-if prompt1 and "vectors" in st.session_state:
-    # Retrieve last 10 interactions to form the context
+# Function to get a response from the chat model
+def get_chatmodel_response(question):
+    # Append user message to flowmessages
+    st.session_state['flowmessages'].append(HumanMessage(content=question))
+    
+    # Prepare the context
     context = get_last_context()
+    
+    # Create input data for the retrieval chain
+    input_data = {
+        'input': question,         # User's new question
+        'history': context        # Past interactions as context
+    }
     
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
@@ -87,14 +105,24 @@ if prompt1 and "vectors" in st.session_state:
     
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
+    response = retrieval_chain.invoke(input_data)
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
     answer = response['answer']
     
+    # Append bot response to flowmessages
+    st.session_state['flowmessages'].append(AIMessage(content=answer))
+    
     # Append the interaction to the session state history
-    st.session_state.history.append({"question": prompt1, "answer": answer})
+    st.session_state.history.append({"question": question, "answer": answer})
+    
+    return answer
+
+# If a question is entered and documents are embedded
+if prompt1 and "vectors" in st.session_state:
+    # Get response from the chat model
+    answer = get_chatmodel_response(prompt1)
     
     # Display the current answer
     st.write(answer)
