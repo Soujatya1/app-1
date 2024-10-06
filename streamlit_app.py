@@ -107,6 +107,9 @@ if prompt1 and "vectors" in st.session_state:
     
     # With a streamlit expander to show the document similarity search results
     with st.expander("Document Similarity Search"):
-        for i, doc in enumerate(response["context"]):
+        for i, doc in enumerate(response.get("context", [])):
+            # Assuming doc contains a 'metadata' field with the filename
+            doc_name = doc.metadata.get("source", "Unknown Document")
+            st.write(f"Document: {doc_name}")
             st.write(doc.page_content)
             st.write("--------------------------------")
