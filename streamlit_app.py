@@ -3,13 +3,13 @@ from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains.combine_documents import create_stuff_documents_chain
-from langchain_core.prompts import ChatPromptTemplate
+from langchain.prompts import ChatPromptTemplate
 from langchain.chains import create_retrieval_chain
-from langchain_community.vectorstores import FAISS
-from langchain_community.document_loaders import PyPDFDirectoryLoader
+from langchain.vectorstores import FAISS
+from langchain.document_loaders import PyPDFDirectoryLoader
+from langchain.schema import SystemMessage, HumanMessage, AIMessage
 import os
 import time
-from langchain.schema import SystemMessage, HumanMessage, AIMessage
 
 st.title("Knowledge Management Chatbot")
 
@@ -17,12 +17,11 @@ st.title("Knowledge Management Chatbot")
 if 'history' not in st.session_state:
     st.session_state.history = []
 
-# Initialize the flow messages if not present
+# Initialize flowmessages if not present
 if 'flowmessages' not in st.session_state:
-    st.session_state['flowmessages'] = [
-        SystemMessage(content="You are a Knowledge Management Specialist who answers questions based on the documents uploaded")
-    ]
+    st.session_state['flowmessages'] = [SystemMessage(content="You are a comedian AI assistant")]
 
+# Upload PDF files
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
 if uploaded_files:
@@ -38,7 +37,7 @@ if uploaded_files:
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
 # Chat Prompt Template
-chat_prompt = ChatPromptTemplate.from_template(
+prompt = ChatPromptTemplate.from_template(
 """
 Use the following context for answering the question:
 <context>
@@ -58,42 +57,22 @@ def vector_embedding():
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-# Function to get the last context from history
+# Function to form context from the last 10 interactions
 def get_last_context():
     history = st.session_state.history[-10:]  # Take the last 10 interactions
     context = "\n".join([f"Q: {h['question']}\nA: {h['answer']}" for h in history])
     return context
 
-# Function to get the chat model response
+# Function to get AI response and update the flowmessages
 def get_chatmodel_response(question):
-    # Append the user's question to the flow messages
     st.session_state['flowmessages'].append(HumanMessage(content=question))
 
-    # Retrieve the last context from the session state
-    context = get_last_context()
+    # Call the chat model with the flowmessages
+    answer = llm(st.session_state['flowmessages'])
 
-    # Create the prompt using the ChatPromptTemplate
-    prompt = chat_prompt.format(context=context, input=question)
-
-    # Call the model with the prompt as a string
-    try:
-        response = llm.invoke(prompt)  # Adjusted to pass a string directly
-        
-        # Print the entire response for debugging
-        st.write("Model Response:", response)
-
-        # Check if the response is valid and has the 'content' attribute
-        if hasattr(response, 'content'):
-            answer = response.content  # Access the content attribute
-        else:
-            answer = "Sorry, I didn't get a valid response from the model."
-
-    except Exception as e:
-        answer = f"An error occurred: {str(e)}"
-
-    # Append the AI's response to the flow messages
-    st.session_state['flowmessages'].append(AIMessage(content=answer))
-    return answer
+    # Append AI response to the flowmessages and return the answer
+    st.session_state['flowmessages'].append(AIMessage(content=answer['generation']['content']))
+    return answer['generation']['content']
 
 # Display the conversation history at the top
 st.header("Conversation History")
@@ -107,13 +86,12 @@ st.write("---")
 st.write("Ask your question below:")
 
 # Text input for the user to enter the question at the bottom
-prompt1 = st.text_input("Enter your question here...")
+prompt1 = st.text_input("Enter your question here.....")
 
 # Button to embed documents
 if st.button("Embed Docs"):
     vector_embedding()
 
-# If a question is entered and documents are embedded
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
     # Retrieve last 10 interactions to form the context
@@ -127,14 +105,22 @@ if prompt1 and "vectors" in st.session_state:
     # Measure the time to get a response
     start = time.process_time()
     
-    # Call your function to get the AI response
-    answer = get_chatmodel_response(prompt1)  # Store the answer here
+    # Get AI response with conversation context
+    answer = get_chatmodel_response(prompt1)  # Use this function to get the AI response
+    
+    # Display the response time
+    st.write("Response time :", time.process_time() - start)
+    
+    # Append the interaction to the session state history
+    st.session_state.history.append({"question": prompt1, "answer": answer})
     
     # Display the current answer
     st.write(answer)
     
-    # Add the below line to process the response
+    # Document similarity search
     with st.expander("Document Similarity Search"):
-        for doc in retrieval_chain.invoke({'input': prompt1, 'context': context})["context"]:
+        # Retrieve the relevant documents for the input question and context
+        response = retrieval_chain.invoke({'input': prompt1, 'context': context})
+        for i, doc in enumerate(response["context"]):
             st.write(doc.page_content)
             st.write("--------------------------------")
