@@ -15,9 +15,8 @@ st.title("Knowledge Management Chatbot")
 # Initialize the interaction history if not present
 if 'history' not in st.session_state:
     st.session_state.history = []
-
-if 'last_answer' not in st.session_state:
-    st.session_state.last_answer = ""
+if 'last_response' not in st.session_state:
+    st.session_state.last_response = ""
 
 uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
 
@@ -37,12 +36,11 @@ llm = ChatGroq(groq_api_key="gsk_fakgZO9r9oJ78vNPuNE1WGdyb3FYaHNTQ24pnwhV7FebDNR
 prompt = ChatPromptTemplate.from_template(
 """
 Answer the questions based on the provided context only.
-Please provide the most accurate response based on the question.
-
-Context:
+Please provide the most accurate response based on the question
+<context>
 {context}
-
-Questions: {input}
+<context>
+Questions:{input}
 """
 )
 
@@ -58,7 +56,7 @@ def vector_embedding():
 
 # Display the conversation history at the top
 st.header("Conversation History")
-for interaction in st.session_state.history[-10:]:
+for interaction in st.session_state.history[-10:]:  # Show last 10 interactions
     st.write(f"**You:** {interaction['question']}")
     st.write(f"**Bot:** {interaction['answer']}")
     st.write("---")
@@ -74,33 +72,35 @@ prompt1 = st.text_input("Enter your question here.....")
 if st.button("Embed Docs"):
     vector_embedding()
 
+def is_referring_to_previous(input_text):
+    """Check if the user input is likely referring to the previous interaction."""
+    # A simple check: if the input is too short (e.g., < 5 words), assume it's a vague instruction
+    return len(input_text.split()) < 5
+
 # If a question is entered and documents are embedded
 if prompt1 and "vectors" in st.session_state:
-    # Check if the user is referring to the previous answer
-    if prompt1.lower() in ["elaborate more", "tell me more", "explain further"] and st.session_state.last_answer:
-        prompt1 = f"Please elaborate on: {st.session_state.last_answer}"
-
+    # Check if the user is referring to the last response
+    if is_referring_to_previous(prompt1):
+        prompt1 = f"{prompt1}. Based on the previous answer: {st.session_state.last_response}"
+    
     # Create chains for document retrieval and question answering
     document_chain = create_stuff_documents_chain(llm, prompt)
     retriever = st.session_state.vectors.as_retriever()
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
     
-    # Get the context from the last 10 interactions
-    context = "\n".join([f"Q: {interaction['question']}\nA: {interaction['answer']}" for interaction in st.session_state.history[-10:]])
-    
     # Measure the time to get a response
     start = time.process_time()
-    response = retrieval_chain.invoke({'input': prompt1, 'context': context})
+    response = retrieval_chain.invoke({'input': prompt1})
     st.write("Response time :", time.process_time() - start)
     
     # Extract the answer from the response
     answer = response['answer']
     
-    # Save the last answer
-    st.session_state.last_answer = answer
-    
     # Append the interaction to the session state history
     st.session_state.history.append({"question": prompt1, "answer": answer})
+    
+    # Store the latest response for future reference
+    st.session_state.last_response = answer
     
     # Display the current answer
     st.write(answer)
