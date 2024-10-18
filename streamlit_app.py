@@ -247,9 +247,9 @@ if prompt1 and "vectors" in st.session_state:
     #filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    filtered_documents_dict = {'documents': filtered_documents}
+    #filtered_documents_dict = {'documents': filtered_documents}
 
-    input_dict = {"input": translated_prompt, "documents": filtered_documents_dict['documents']}
+    #input_dict = {"input": translated_prompt, "documents": filtered_documents_dict['documents']}
 
     # Timing the response
     start = time.process_time()
