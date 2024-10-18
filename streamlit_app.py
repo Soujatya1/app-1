@@ -174,6 +174,7 @@ def translate_text(text, source_language, target_language):
         return ""
 
 language_mapping = {
+    "Auto-detect": "",
     "English": "en",
     "Kashmiri": "ks",
     "Nepali": "ne",
