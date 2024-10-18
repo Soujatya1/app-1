@@ -10,6 +10,8 @@ from langchain_community.document_loaders import PyPDFDirectoryLoader
 import os
 import time
 import requests
+from langdetect import detect, DetectorFactory
+from langdetect.lang_detect_exception import LangDetectException
 
 st.title("Knowledge Management Chatbot")
 
