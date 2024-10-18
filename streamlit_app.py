@@ -243,8 +243,8 @@ if prompt1 and "vectors" in st.session_state:
     retriever = st.session_state.vectors.as_retriever(search_type="similarity", k=2)
 
     # Retrieve filtered documents (priority given to 'text')
-    filtered_documents = retrieve_documents_with_filter(retriever, translated_prompt, "table")
-    filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
+    #filtered_documents = retrieve_documents_with_filter(retriever, translated_prompt, "table")
+    #filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
     filtered_documents_dict = {'documents': filtered_documents}
@@ -253,7 +253,7 @@ if prompt1 and "vectors" in st.session_state:
 
     # Timing the response
     start = time.process_time()
-    response = retrieval_chain.invoke(input_dict)
+    response = retrieval_chain.invoke({'input': translated_prompt})
     st.write("Response time:", time.process_time() - start)
 
     # Get the answer
