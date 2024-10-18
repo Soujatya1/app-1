@@ -13,6 +13,14 @@ import requests
 
 st.title("Knowledge Management Chatbot")
 
+DetectorFactory.seed = 0
+
+def detect_language(text):
+    try:
+        return detect(text)
+    except LangDetectException:
+        return None
+
 st.markdown("""
     <style>
     .input-box {
@@ -208,31 +216,64 @@ with input_box.container():
     prompt1 = st.text_input("Enter your question here.....", key="user_input", placeholder="Type your question...")
     
 if prompt1 and "vectors" in st.session_state:
-    if selected_language != "English":
-        translated_prompt = translate_text(prompt1, language_mapping[selected_language], "en")
+    # Detect the language of the input
+    detected_language = detect_language(prompt1)
+
+    # Use detected language only if "Auto-detect" is selected or a blank is chosen
+    if selected_language == "Auto-detect":
+        if detected_language:
+            st.write(f"Detected language: {detected_language}")
+        else:
+            detected_language = "en"  # Default to English if detection fails
+        source_language = detected_language
+    else:
+        # Use the language from the selectbox
+        source_language = language_mapping[selected_language]
+
+    # Translate input to English if necessary
+    if source_language != "en":
+        translated_prompt = translate_text(prompt1, source_language, "en")
     else:
         translated_prompt = prompt1
-        
+
+    # Continue with document retrieval and processing
     document_chain = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
-    retriever = st.session_state.vectors.as_retriever()
+    retriever = st.session_state.vectors.as_retriever(search_type="similarity", k=2)
+
+    # Retrieve filtered documents (priority given to 'text')
+    filtered_documents = retrieve_documents_with_filter(retriever, translated_prompt, "table")
+    filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    start = time.process_time()
-    response = retrieval_chain.invoke({'input': translated_prompt})
-    st.write("Response time :", time.process_time() - start)
+    filtered_documents_dict = {'documents': filtered_documents}
 
+    input_dict = {"input": translated_prompt, "documents": filtered_documents_dict['documents']}
+
+    # Timing the response
+    start = time.process_time()
+    response = retrieval_chain.invoke(input_dict)
+    st.write("Response time:", time.process_time() - start)
+
+    # Get the answer
     answer = response['answer']
 
-    if selected_language != "English":
+    #answer_with_source = append_source_to_answer(answer, filtered_documents)
+
+
+    # Translate the answer back to the selected language if needed
+    if selected_language != "English" and selected_language != "Auto-detect":
         translated_answer = translate_text(answer, "en", language_mapping[selected_language])
         answer = translated_answer if translated_answer else answer
 
+    if detected_language != "en":
+        translated_answer = translate_text(answer, "en", detected_language)
+        answer = translated_answer if translated_answer else answer
+
+    # Store the response in session history
     st.session_state.last_context = answer
-
     st.session_state.history.append({"question": prompt1, "answer": answer})
+    st.write(f"**Bot:** {answer}")
 
-    st.write(answer)
-    
     with st.expander("Document Similarity Search"):
         if "context" in response:
             for i, doc in enumerate(response["context"]):
