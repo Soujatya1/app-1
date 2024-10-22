@@ -13,8 +13,8 @@ import requests
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
-st.title("Document Genie!")
-st.subheader("Talk to your Document")
+st.title("Document GEN-ie!")
+st.subheader("Talk to your Documents")
 
 DetectorFactory.seed = 0
 
