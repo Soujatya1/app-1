@@ -13,7 +13,7 @@ import requests
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
-st.title("Knowledge Management Chatbot")
+st.title("Document GPT!")
 
 DetectorFactory.seed = 0
 
