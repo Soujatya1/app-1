@@ -13,7 +13,8 @@ import requests
 from langdetect import detect, DetectorFactory
 from langdetect.lang_detect_exception import LangDetectException
 
-st.title("Document GPT!")
+st.title("Document Genie!")
+st.subheader("Talk to your Document")
 
 DetectorFactory.seed = 0
 
