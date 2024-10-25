@@ -76,21 +76,6 @@ if uploaded_files:
 
 llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
 
-def compare_documents(docs):
-    comparisons = []
-    for i, doc_a in enumerate(docs):
-        for doc_b in docs[i+1:]:
-            # Placeholder for custom comparison logic (e.g., content similarity, keyword matching)
-            common_themes = set(doc_a.page_content.split()) & set(doc_b.page_content.split())
-            differences = set(doc_a.page_content.split()) - set(doc_b.page_content.split())
-            comparisons.append({
-                "Document A": doc_a.metadata.get("source", "Unknown"),
-                "Document B": doc_b.metadata.get("source", "Unknown"),
-                "Common Themes": " ".join(common_themes),
-                "Differences": " ".join(differences)
-            })
-    return comparisons
-
 def create_prompt(input_text):
     previous_interactions = "\n".join(
         [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]
@@ -233,50 +218,69 @@ with st.sidebar:
 input_box = st.empty()
 with input_box.container():
     prompt1 = st.text_input("Enter your question here.....", key="user_input", placeholder="Type your question...")
-    
+
 if prompt1 and "vectors" in st.session_state:
     # Detect the language of the input
     detected_language = detect_language(prompt1)
 
-    # Set the source language based on user selection or auto-detection
+    # Use detected language only if "Auto-detect" is selected or a blank is chosen
     if selected_language == "Auto-detect":
-        source_language = detected_language if detected_language else "en"  # Defaults to English
-        st.write(f"Detected language: {detected_language}")
+        if detected_language:
+            st.write(f"Detected language: {detected_language}")
+        else:
+            detected_language = "en"  # Default to English if detection fails
+        source_language = detected_language
     else:
+        # Use the language from the selectbox
         source_language = language_mapping[selected_language]
 
-    # Translate prompt to English if necessary
-    translated_prompt = translate_text(prompt1, source_language, "en") if source_language != "en" else prompt1
+    # Translate input to English if necessary
+    if source_language != "en":
+        translated_prompt = translate_text(prompt1, source_language, "en")
+    else:
+        translated_prompt = prompt1
 
-    # Create document retrieval and processing chain
+    # Continue with document retrieval and processing
     document_chain = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
     retriever = st.session_state.vectors.as_retriever(search_type="similarity", k=2)
+
+    # Retrieve filtered documents (priority given to 'text')
+    #filtered_documents = retrieve_documents_with_filter(retriever, translated_prompt, "table")
+    #filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
     retrieval_chain = create_retrieval_chain(retriever, document_chain)
 
-    # Retrieve and process response timing
+    #filtered_documents_dict = {'documents': filtered_documents}
+
+    #input_dict = {"input": translated_prompt, "documents": filtered_documents_dict['documents']}
+
+    # Timing the response
     start = time.process_time()
     response = retrieval_chain.invoke({'input': translated_prompt})
     st.write("Response time:", time.process_time() - start)
+
+    # Get the answer
     answer = response['answer']
 
-    # Translate answer back if necessary
-    if selected_language != "English" and selected_language != "Auto-detect":
-        answer = translate_text(answer, "en", language_mapping[selected_language]) or answer
-    elif detected_language != "en":
-        answer = translate_text(answer, "en", detected_language) or answer
+    #answer_with_source = append_source_to_answer(answer, filtered_documents)
 
-    # Store response in history
+
+    # Translate the answer back to the selected language if needed
+    if selected_language != "English" and selected_language != "Auto-detect":
+        translated_answer = translate_text(answer, "en", language_mapping[selected_language])
+        answer = translated_answer if translated_answer else answer
+
+    if detected_language != "en":
+        translated_answer = translate_text(answer, "en", detected_language)
+        answer = translated_answer if translated_answer else answer
+
+    # Store the response in session history
     st.session_state.last_context = answer
     st.session_state.history.append({"question": prompt1, "answer": answer})
     st.write(f"**Bot:** {answer}")
 
-    # Comparison button for document context
-    if st.button("Compare Documents"):
-        if response.get("context"):
-            comparisons = compare_documents(response["context"])
-            with st.expander("Document Comparison Results"):
-                for comparison in comparisons:
-                    st.write(f"**Comparing:** {comparison['Document A']} & {comparison['Document B']}")
-                    st.write(f"**Common Themes:** {comparison['Common Themes']}")
-                    st.write(f"**Differences:** {comparison['Differences']}")
-                    st.write("---")
+    with st.expander("Document Similarity Search"):
+        if "context" in response:
+            for i, doc in enumerate(response["context"]):
+                doc_name = doc.metadata.get("source", "Unknown Document")
+                st.write(f"Document: {doc_name}")
+                st.write(doc.page_content)
