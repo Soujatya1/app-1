@@ -44,39 +44,58 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-if not os.path.exists("uploaded_files"):
-    os.makedirs("uploaded_files")
+# Ensure directories for both upload slots
+os.makedirs("uploaded_files_1", exist_ok=True)
+os.makedirs("uploaded_files_2", exist_ok=True)
 
-
+# Session state for history and context
 if 'history' not in st.session_state:
     st.session_state.history = []
-
 if 'last_context' not in st.session_state:
     st.session_state.last_context = ""
-
-uploaded_files = st.file_uploader("Upload a file", type=["pdf"], accept_multiple_files=True)
-
-if uploaded_files:
-    for uploaded_file in uploaded_files:
-        # Save each file temporarily in the created directory
-        file_path = os.path.join("uploaded_files", uploaded_file.name)
+    
+llm = ChatGroq(groq_api_key="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", model_name="Llama3-70b-8192")
+# First uploader for Document Set 1
+uploaded_files_1 = st.file_uploader("Upload files for Document Set 1", type=["pdf"], accept_multiple_files=True, key="uploader_1")
+if uploaded_files_1:
+    for uploaded_file in uploaded_files_1:
+        file_path = os.path.join("uploaded_files_1", uploaded_file.name)
         with open(file_path, "wb") as f:
             f.write(uploaded_file.getbuffer())
+        st.success(f"File '{uploaded_file.name}' uploaded to Document Set 1.")
 
-        st.success(f"File '{uploaded_file.name}' uploaded successfully!")
+    if "vectors_1" not in st.session_state:
+        st.session_state.embeddings_1 = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        st.session_state.loader_1 = PyPDFDirectoryLoader("uploaded_files_1")
+        st.session_state.docs_1 = st.session_state.loader_1.load()
+        st.write(f"Loaded {len(st.session_state.docs_1)} documents for Set 1.")
 
-    if "vectors" not in st.session_state:
-        st.session_state.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-        st.session_state.loader = PyPDFDirectoryLoader("uploaded_files")
-        st.session_state.docs = st.session_state.loader.load()
-        st.write(f"Loaded {len(st.session_state.docs)} documents.")
+        st.session_state.text_splitter_1 = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        st.session_state.final_documents_1 = st.session_state.text_splitter_1.split_documents(st.session_state.docs_1)
+        st.session_state.vectors_1 = FAISS.from_documents(st.session_state.final_documents_1, st.session_state.embeddings_1)
 
-        st.session_state.text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
-        st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
-        st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
+# Second uploader for Document Set 2
+uploaded_files_2 = st.file_uploader("Upload files for Document Set 2", type=["pdf"], accept_multiple_files=True, key="uploader_2")
+if uploaded_files_2:
+    for uploaded_file in uploaded_files_2:
+        file_path = os.path.join("uploaded_files_2", uploaded_file.name)
+        with open(file_path, "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.success(f"File '{uploaded_file.name}' uploaded to Document Set 2.")
 
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-8b-8192")
+    if "vectors_2" not in st.session_state:
+        st.session_state.embeddings_2 = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+        st.session_state.loader_2 = PyPDFDirectoryLoader("uploaded_files_2")
+        st.session_state.docs_2 = st.session_state.loader_2.load()
+        st.write(f"Loaded {len(st.session_state.docs_2)} documents for Set 2.")
 
+        st.session_state.text_splitter_2 = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=100)
+        st.session_state.final_documents_2 = st.session_state.text_splitter_2.split_documents(st.session_state.docs_2)
+        st.session_state.vectors_2 = FAISS.from_documents(st.session_state.final_documents_2, st.session_state.embeddings_2)
+
+# Language translation setup (reuse existing code for translation)
+
+# Chat and retrieval function
 def create_prompt(input_text):
     previous_interactions = "\n".join(
         [f"You: {h['question']}\nBot: {h['answer']}" for h in st.session_state.history[-5:]]
@@ -84,16 +103,16 @@ def create_prompt(input_text):
     return ChatPromptTemplate.from_template(
         f"""
         Answer the questions based on the provided context only.
-        Please provide the most accurate response based on the question.
         Previous Context: {st.session_state.last_context}
         Previous Interactions:\n{previous_interactions}
         <context>
         {{context}}
         <context>
-        Questions: {input_text}
+        Question: {input_text}
         """
     )
 
+# Language selection (reuse existing code for language mapping and detection)
 def translate_text(text, source_language, target_language):
     api_url = "https://meity-auth.ulcacontrib.org/ulca/apis/v0/model/getModelsPipeline/"
     user_id = "bdeee189dc694351b6b248754a918885"
@@ -216,72 +235,49 @@ with st.sidebar:
     st.header("Language Selection")
     selected_language = st.selectbox("Select language for translation:", language_options, key="language_selection")
 
+# Input box for user query
 input_box = st.empty()
 with input_box.container():
-    prompt1 = st.text_input("Enter your question here.....", key="user_input", placeholder="Type your question...")
+    prompt1 = st.text_input("Enter your question here...", key="user_input", placeholder="Type your question...")
 
-if prompt1 and "vectors" in st.session_state:
+if prompt1 and "vectors_1" in st.session_state and "vectors_2" in st.session_state:
     # Detect the language of the input
     detected_language = detect_language(prompt1)
-
-    # Use detected language only if "Auto-detect" is selected or a blank is chosen
-    if selected_language == "Auto-detect":
-        if detected_language:
-            st.write(f"Detected language: {detected_language}")
-        else:
-            detected_language = "en"  # Default to English if detection fails
-        source_language = detected_language
-    else:
-        # Use the language from the selectbox
-        source_language = language_mapping[selected_language]
+    source_language = detected_language or "en"
 
     # Translate input to English if necessary
-    if source_language != "en":
-        translated_prompt = translate_text(prompt1, source_language, "en")
-    else:
-        translated_prompt = prompt1
+    translated_prompt = prompt1  # Modify this if translation is required
 
-    # Continue with document retrieval and processing
-    document_chain = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
-    retriever = st.session_state.vectors.as_retriever(search_type="similarity", k=2)
+    # Document Set 1 retrieval
+    document_chain_1 = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
+    retriever_1 = st.session_state.vectors_1.as_retriever(search_type="similarity", k=2)
+    retrieval_chain_1 = create_retrieval_chain(retriever_1, document_chain_1)
+    response_1 = retrieval_chain_1.invoke({'input': translated_prompt})
+    answer_1 = response_1['answer']
 
-    # Retrieve filtered documents (priority given to 'text')
-    #filtered_documents = retrieve_documents_with_filter(retriever, translated_prompt, "table")
-    #filtered_documents += retrieve_documents_with_filter(retriever, translated_prompt, "text")
-    retrieval_chain = create_retrieval_chain(retriever, document_chain)
+    # Document Set 2 retrieval
+    document_chain_2 = create_stuff_documents_chain(llm, create_prompt(translated_prompt))
+    retriever_2 = st.session_state.vectors_2.as_retriever(search_type="similarity", k=2)
+    retrieval_chain_2 = create_retrieval_chain(retriever_2, document_chain_2)
+    response_2 = retrieval_chain_2.invoke({'input': translated_prompt})
+    answer_2 = response_2['answer']
 
-    #filtered_documents_dict = {'documents': filtered_documents}
+    # Display answers
+    st.write("**Document Set 1 Answer:**", answer_1)
+    st.write("**Document Set 2 Answer:**", answer_2)
 
-    #input_dict = {"input": translated_prompt, "documents": filtered_documents_dict['documents']}
+    # Save responses to session history
+    st.session_state.history.append({"question": prompt1, "answer_set_1": answer_1, "answer_set_2": answer_2})
 
-    # Timing the response
-    start = time.process_time()
-    response = retrieval_chain.invoke({'input': translated_prompt})
-    st.write("Response time:", time.process_time() - start)
+    # Optionally display retrieved document contents
+    with st.expander("Document Set 1 Similarity Search"):
+        for i, doc in enumerate(response_1.get("context", [])):
+            doc_name = doc.metadata.get("source", "Unknown Document")
+            st.write(f"Document: {doc_name}")
+            st.write(doc.page_content)
 
-    # Get the answer
-    answer = response['answer']
-
-    #answer_with_source = append_source_to_answer(answer, filtered_documents)
-
-
-    # Translate the answer back to the selected language if needed
-    if selected_language != "English" and selected_language != "Auto-detect":
-        translated_answer = translate_text(answer, "en", language_mapping[selected_language])
-        answer = translated_answer if translated_answer else answer
-
-    if detected_language != "en":
-        translated_answer = translate_text(answer, "en", detected_language)
-        answer = translated_answer if translated_answer else answer
-
-    # Store the response in session history
-    st.session_state.last_context = answer
-    st.session_state.history.append({"question": prompt1, "answer": answer})
-    st.write(f"**Bot:** {answer}")
-
-    with st.expander("Document Similarity Search"):
-        if "context" in response:
-            for i, doc in enumerate(response["context"]):
-                doc_name = doc.metadata.get("source", "Unknown Document")
-                st.write(f"Document: {doc_name}")
-                st.write(doc.page_content)
+    with st.expander("Document Set 2 Similarity Search"):
+        for i, doc in enumerate(response_2.get("context", [])):
+            doc_name = doc.metadata.get("source", "Unknown Document")
+            st.write(f"Document: {doc_name}")
+            st.write(doc.page_content)
