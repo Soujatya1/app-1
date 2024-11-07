@@ -86,6 +86,7 @@ def create_prompt(input_text):
         Answer the questions based on the provided context only.
         Please provide the most accurate response based on the question.
         Read the documents carefully and as a good Comparer, compare all the elements listed in the documents and also calculate the differences intelligently, if any.
+        During the comparison, if any field in one document is showing null and has value in other, please reflect the same in the results.
         While asked to compare between two documents, please intelligently understand the items in both the documents and state the differences and similarities
         as mentioned in the input query.
         Previous Context: {st.session_state.last_context}
