@@ -89,6 +89,7 @@ def create_prompt(input_text):
         During the comparison, if any field in one document is showing null and has value in other, please reflect the same in the results.
         While asked to compare between two documents, please intelligently understand the items in both the documents and state the differences and similarities
         as mentioned in the input query.
+        If there are differences found, please calculate the difference in the last column of the table.
         Previous Context: {st.session_state.last_context}
         Previous Interactions:\n{previous_interactions}
         <context>
