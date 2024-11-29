@@ -1,4 +1,3 @@
-
 import streamlit as st
 from langchain_groq import ChatGroq
 from langchain.embeddings import HuggingFaceEmbeddings
@@ -75,7 +74,7 @@ if uploaded_files:
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-llm = ChatGroq(groq_api_key="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", model_name="Llama3-70b-8192")
+llm = ChatGroq(groq_api_key="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", model_name="llama-3.1-70b-versatile")
 
 def create_prompt(input_text):
     previous_interactions = "\n".join(
