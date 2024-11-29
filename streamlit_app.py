@@ -74,7 +74,7 @@ if uploaded_files:
         st.session_state.final_documents = st.session_state.text_splitter.split_documents(st.session_state.docs)
         st.session_state.vectors = FAISS.from_documents(st.session_state.final_documents, st.session_state.embeddings)
 
-llm = ChatGroq(groq_api_key="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", model_name="llama-3.1-70b-versatile")
+llm = ChatGroq(groq_api_key="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", model_name="llama-3.1-70b-versatile", proxies = proxies)
 
 def create_prompt(input_text):
     previous_interactions = "\n".join(
