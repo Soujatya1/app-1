@@ -82,7 +82,7 @@ def create_prompt(input_text):
     )
     return ChatPromptTemplate.from_template(
         f"""
-        Answer the questions based on the provided context only.
+        Answer the questions based on the provided documents only.
         Please provide the most accurate response based on the question.
         Read the documents carefully and as a good Comparer, compare all the elements listed in the documents and also calculate the differences intelligently, if any.
         During the comparison, if any field in one document is showing null and has value in other, please reflect the same in the results.
